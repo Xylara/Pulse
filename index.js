@@ -10,10 +10,8 @@ const authMiddleware = require('./middleware/auth');
 
 app.set('view engine', 'ejs');
 
-// Serve static assets from `public` (already here)
 app.use(express.static('public'));
 
-// <--- NEW: serve the `others` folder ---
 app.use('/others', express.static('others'));
 
 app.use(bodyparser.urlencoded({ extended: false }));
