@@ -7,6 +7,7 @@ const { readUsers } = require('./utils/user');
 const userRoutes = require('./routes/user');
 const dashboardRoutes = require('./routes/dashboard');
 const authMiddleware = require('./middleware/auth');
+const accountRoutes = require('./routes/account')
 
 app.set('view engine', 'ejs');
 
@@ -23,6 +24,7 @@ app.use(expressSession({
 
 app.use('/', userRoutes);
 app.use('/dashboard', authMiddleware, dashboardRoutes);
+app.use('/', authMiddleware, accountRoutes);
 
 app.get('/', (req, res) => {
   res.render('home');

@@ -34,10 +34,16 @@ router.post('/register', async (req, res) => {
       return res.status(400).render('register', { error: 'Username is already taken' });
     }
 
-    const id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const id = Array.from({ length: 15 }, () => Math.floor(Math.random() * 10)).join('');
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    users.push({ id, email, username, password: hashedPassword });
+    users.push({ 
+      id, 
+      email, 
+      username, 
+      password: hashedPassword,
+      profilepicture: 'https://cdn.hyghj.eu.org/cdn/profile/default.png' // 🎯 Default profile picture
+    });
     writeUsers(users);
 
     res.redirect('/login');
