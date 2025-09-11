@@ -7,5 +7,23 @@
     "express-session": "^1.18.2",
     "fs": "^0.0.1-security",
     "path": "^0.12.7"
-  }
+  },
+  "name": "pulse",
+  "version": "1.0.0",
+  "description": "A selfhosted discord like application",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/im-playstation451/Pulse.git"
+  },
+  "author": "playstation451",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/im-playstation451/Pulse/issues"
+  },
+  "homepage": "https://github.com/im-playstation451/Pulse#readme"
 }
