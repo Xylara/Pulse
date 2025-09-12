@@ -42,7 +42,7 @@ router.post('/register', async (req, res) => {
       email, 
       username, 
       password: hashedPassword,
-      profilepicture: 'https://cdn.hyghj.eu.org/cdn/profile/default.png' // 🎯 Default profile picture
+      profilepicture: 'https://cdn.hyghj.eu.org/cdn/profile/default.png'
     });
     writeUsers(users);
 
