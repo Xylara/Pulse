@@ -4,13 +4,23 @@
     "email": "a@a",
     "username": "playstation451",
     "password": "$2b$10$g1.eXDKhv/V6KBWuMtx1Y.I3hXL2itBwQOZ0Lt1e2Ch.XfU5L3xTm",
-    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png"
+    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
+    "friends": [
+      "s"
+    ],
+    "sentFriendRequests": [],
+    "receivedFriendRequests": []
   },
   {
     "id": "465545010385632",
     "email": "s@s",
     "username": "s",
     "password": "$2b$10$gC5xxsNxu8jDwrXaro6ljuiBgbBRtG23aMVbugSyoF8cpcoQMWTAe",
-    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png"
+    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
+    "friends": [
+      "playstation451"
+    ],
+    "sentFriendRequests": [],
+    "receivedFriendRequests": []
   }
 ]
