@@ -5,7 +5,8 @@ const { readUsers, writeUsers } = require('../utils/user');
 router.get('/', (req, res) => {
   const message = req.session.message;
   delete req.session.message;
-  res.render('dashboard', { user: req.session.user, message: message });
+  const allUsers = readUsers();
+  res.render('dashboard', { user: req.session.user, message: message, users: allUsers });
 });
 
 router.get('/dashboard', (req, res) => {
