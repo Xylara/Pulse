@@ -1,4 +1,5 @@
 # Pulse
-A selfhosted discord like application
 
-must make a cdn for this rq
+A selfhosted encrypted chat application
+
+> development is in progress
