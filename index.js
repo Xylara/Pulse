@@ -54,6 +54,18 @@ io.on('connection', (socket) => {
 
     io.to([senderId, receiverId]).emit('chat message', newMessage);
   });
+
+  socket.on('friendRequestAccepted', (data) => {
+    console.log('friendRequestAccepted:', data);
+    alert(`friendRequestAccepted from ${data.accepterUsername}!`);
+    location.reload();
+  });
+
+  socket.on('unfriended', (data) => {
+    console.log('You have been unfriended:', data.unfrienderUsername);
+    alert(`You have been unfriended by ${data.unfrienderUsername}!`);
+    location.reload();
+  });
 });
 
 app.get('/dm/:id', authMiddleware, async (req, res) => {

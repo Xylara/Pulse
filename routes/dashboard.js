@@ -113,7 +113,7 @@ router.post('/accept-friend-request', (req, res) => {
 
   users[currentUserIndex].receivedFriendRequests.splice(receivedRequestIndex, 1);
   const sentRequestIndex = users[requesterIndex].sentFriendRequests.indexOf(currentUser.username);
-  if (sentRequestIndex !== -1) { 
+  if (sentRequestIndex !== -1) {
     users[requesterIndex].sentFriendRequests.splice(sentRequestIndex, 1);
   }
 
@@ -169,5 +169,44 @@ router.post('/reject-friend-request', (req, res) => {
   res.redirect('/dashboard');
 });
 
+router.post('/unfriend', (req, res) => {
+  const { friendUsername } = req.body;
+  const currentUser = req.session.user;
+
+  let users = readUsers();
+  const currentUserIndex = users.findIndex(u => u.id === currentUser.id);
+  const friendIndex = users.findIndex(u => u.username === friendUsername);
+
+  if (currentUserIndex === -1 || friendIndex === -1) {
+    req.session.message = { type: 'error', text: 'An error occurred. User not found.' };
+    return res.redirect('/dashboard');
+  }
+
+  if (!users[currentUserIndex].friends) users[currentUserIndex].friends = [];
+  if (!users[friendIndex].friends) users[friendIndex].friends = [];
+
+  const currentUserFriendIndex = users[currentUserIndex].friends.indexOf(friendUsername);
+  const friendUserFriendIndex = users[friendIndex].friends.indexOf(currentUser.username);
+
+  if (currentUserFriendIndex === -1) {
+    req.session.message = { type: 'error', text: `${friendUsername} is not your friend.` };
+    return res.redirect('/dashboard');
+  }
+
+  users[currentUserIndex].friends.splice(currentUserFriendIndex, 1);
+  users[friendIndex].friends.splice(friendUserFriendIndex, 1);
+
+  writeUsers(users);
+
+  req.session.user = users.find(u => u.id === currentUser.id);
+
+  req.app.get('io').to(users[friendIndex].id).emit('unfriended', {
+    unfrienderUsername: currentUser.username,
+    unfrienderId: currentUser.id
+  });
+
+  req.session.message = { type: 'info', text: `You are no longer friends with ${friendUsername}.` };
+  res.redirect('/dashboard');
+});
 
 module.exports = router;
