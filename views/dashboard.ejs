@@ -92,6 +92,25 @@
     </section>
 
   </main>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const userId = '<%= user.id %>';
+
+    socket.emit('joinRoom', userId);
+
+    socket.on('newFriendRequest', (data) => {
+      console.log('New friend request from:', data.from);
+      alert(`New friend request from ${data.from}!`);
+      location.reload();
+    });
+
+    socket.on('friendRequestAccepted', (data) => {
+      console.log('friendRequestAccepted:', data);
+      alert(`friendRequestAccepted from ${data.accepterUsername}!`);
+      location.reload();
+    });
+  </script>
 </body>
 
 </html>

@@ -6,6 +6,10 @@ router.get('/', (req, res) => {
   const message = req.session.message;
   delete req.session.message;
   const allUsers = readUsers();
+  const currentUserData = allUsers.find(u => u.id === req.session.user.id);
+
+  req.session.user = currentUserData;
+
   res.render('dashboard', { user: req.session.user, message: message, users: allUsers });
 });
 
@@ -43,7 +47,7 @@ router.post('/add-friend', (req, res) => {
   const currentUserIndex = users.findIndex(u => u.id === currentUser.id);
   const targetFriendIndex = users.findIndex(u => u.id === targetFriend.id);
 
-  if (!users[currentUserIndex].friends) users[currentUserIndex].friends = [];
+  if (!users[currentUserIndex.friends]) users[currentUserIndex].friends = [];
   if (!users[currentUserIndex].sentFriendRequests) users[currentUserIndex].sentFriendRequests = [];
   if (!users[currentUserIndex].receivedFriendRequests) users[currentUserIndex].receivedFriendRequests = [];
 
@@ -72,12 +76,16 @@ router.post('/add-friend', (req, res) => {
 
   writeUsers(users);
 
-  req.session.user.sentFriendRequests = users[currentUserIndex].sentFriendRequests;
+  req.session.user = users.find(u => u.id === currentUser.id);
+
+  req.app.get('io').to(targetFriend.id).emit('newFriendRequest', {
+    from: currentUser.username,
+    fromId: currentUser.id
+  });
 
   req.session.message = { type: 'success', text: `Friend request sent to ${friendUsername}.` };
   res.redirect('/dashboard');
 });
-
 
 router.post('/accept-friend-request', (req, res) => {
   const { requesterUsername } = req.body;
@@ -114,8 +122,12 @@ router.post('/accept-friend-request', (req, res) => {
 
   writeUsers(users);
 
-  req.session.user.friends = users[currentUserIndex].friends;
-  req.session.user.receivedFriendRequests = users[currentUserIndex].receivedFriendRequests;
+  req.session.user = users.find(u => u.id === currentUser.id);
+
+  req.app.get('io').to(users[requesterIndex].id).emit('friendRequestAccepted', {
+    accepterUsername: currentUser.username,
+    accepterId: currentUser.id
+  });
 
   req.session.message = { type: 'success', text: `You are now friends with ${requesterUsername}!` };
   res.redirect('/dashboard');
@@ -151,7 +163,7 @@ router.post('/reject-friend-request', (req, res) => {
 
   writeUsers(users);
 
-  req.session.user.receivedFriendRequests = users[currentUserIndex].receivedFriendRequests;
+  req.session.user = users.find(u => u.id === currentUser.id);
 
   req.session.message = { type: 'info', text: `Friend request from ${requesterUsername} rejected.` };
   res.redirect('/dashboard');

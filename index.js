@@ -8,7 +8,7 @@ const userRoutes = require('./routes/user');
 const dashboardRoutes = require('./routes/dashboard');
 const authMiddleware = require('./middleware/auth');
 const accountRoutes = require('./routes/account');
-const socketIO = require('socket.io'); 
+const socketIO = require('socket.io');
 const http = require('http');
 
 const server = http.createServer(app);
@@ -31,22 +31,28 @@ app.use(expressSession({
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
+  socket.on('joinRoom', (userId) => {
+    socket.join(userId);
+    console.log(`User ${socket.id} joined room ${userId}`);
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
 
   socket.on('chat message', (msg) => {
-    const { senderId, receiverId, content } = msg;
+    const { senderId, receiverId, type, content } = msg;
     const newMessage = {
       senderId: senderId,
       receiverId: receiverId,
+      type: type,
       content: content,
       timestamp: new Date().toISOString()
     };
 
     messages.push(newMessage);
 
-    io.emit('chat message', newMessage); 
+    io.to([senderId, receiverId]).emit('chat message', newMessage);
   });
 });
 
@@ -59,7 +65,7 @@ app.get('/dm/:id', authMiddleware, async (req, res) => {
     return res.status(404).render('error', { message: 'User not found.' });
   }
 
-  const currentUser = req.session.user; 
+  const currentUser = req.session.user;
   if (!currentUser.friends || !currentUser.friends.includes(targetUser.username)) {
     return res.redirect('/dashboard?message=' + encodeURIComponent('You can only DM friends.'));
   }
@@ -70,7 +76,7 @@ app.get('/dm/:id', authMiddleware, async (req, res) => {
       (msg.senderId === targetUserId && msg.receiverId === currentUser.id)
     )
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    
+
   res.render('dm', {
     user: currentUser,
     targetUser: targetUser,
@@ -81,23 +87,25 @@ app.get('/dm/:id', authMiddleware, async (req, res) => {
 
 app.post('/dm/:id/send', authMiddleware, (req, res) => {
   const targetUserId = req.params.id;
-    const currentUser = req.session.user;
-    const messageContent = req.body.message;
+  const currentUser = req.session.user;
+  const messageContent = req.body.message;
 
-    if (messageContent && messageContent.trim()) {
-        io.emit('chat message', {
-            senderId: currentUser.id,
-            receiverId: targetUserId,
-            content: messageContent.trim(),
-            timestamp: new Date().toISOString()
-        });
-    }
-    res.redirect(`/dm/${targetUserId}`);
+  if (messageContent && messageContent.trim()) {
+    io.emit('chat message', {
+      senderId: currentUser.id,
+      receiverId: targetUserId,
+      content: messageContent.trim(),
+      timestamp: new Date().toISOString()
+    });
+  }
+  res.redirect(`/dm/${targetUserId}`);
 });
 
 app.use('/', userRoutes);
 app.use('/dashboard', authMiddleware, dashboardRoutes);
 app.use('/', authMiddleware, accountRoutes);
+
+app.set('io', io);
 
 app.get('/', (req, res) => {
   res.render('home');

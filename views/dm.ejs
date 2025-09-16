@@ -25,6 +25,22 @@
     .message-area::-webkit-scrollbar-thumb:hover {
       background: #718096;
     }
+
+    body::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    body::-webkit-scrollbar-track {
+      background: #1e1e1e;
+    }
+
+    body::-webkit-scrollbar-thumb {
+      background: #7289da;
+    }
+
+    body::-webkit-scrollbar-thumb:hover {
+      background: #6372e9;
+    }
   </style>
 </head>
 
@@ -33,7 +49,7 @@
 
   <div
     class="flex flex-col flex-1 {{ 'ml-14 transition-all duration-200 hover:ml-40' if sidebar was present }}">
-    <header class="bg-gray-900 border-b border-gray-700 p-4 flex items-center shadow-md">
+    <header class="bg-gray-900 border-b border-gray-700 p-4 flex items-center shadow-md sticky top-0 z-10">
       <a href="/dashboard" class="mr-3">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
           stroke="currentColor" class="w-6 h-6">
@@ -64,7 +80,11 @@
         <% if (message.senderId === user.id) { %>
         <div class="flex justify-end">
           <div class="bg-blue-700 text-white p-3 rounded-xl max-w-xs break-words shadow-md">
+            <% if (message.type === 'image') { %>
+            <img src="<%= message.content %>" alt="Image" class="max-w-xs rounded-xl shadow-md" />
+            <% } else { %>
             <%= message.content %>
+            <% } %>
             <div class="text-xs text-blue-200 mt-1 text-right">
               <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
             </div>
@@ -73,7 +93,11 @@
         <% } else { %>
         <div class="flex justify-start">
           <div class="bg-gray-700 text-white p-3 rounded-xl max-w-xs break-words shadow-md">
+            <% if (message.type === 'image') { %>
+            <img src="<%= message.content %>" alt="Image" class="max-w-xs rounded-xl shadow-md" />
+            <% } else { %>
             <%= message.content %>
+            <% } %>
             <div class="text-xs text-gray-400 mt-1 text-left">
               <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
             </div>
@@ -89,11 +113,28 @@
         <input type="text" id="messageInput" placeholder="Type your message..."
           class="flex-grow p-3 rounded-full bg-gray-800 text-white focus:bg-gray-700 outline-none transition"
           autocomplete="off" required />
+        <input type="file" id="fileInput" class="hidden" accept="image/*, image/gif" />
+        <div class="relative">
+          <label for="fileInput"
+            class="cursor-pointer p-3 rounded-full hover:bg-gray-700 transition">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+              </path>
+            </svg>
+          </label>
+          <span id="pasteIndicator" class="absolute top-0 right-0 flex h-3 w-3 hidden">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
+          </span>
+        </div>
         <button type="submit"
           class="bg-blue-700 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full shadow-md transition duration-300">
           Send
         </button>
       </form>
+      <div id="imagePreview" class="mt-2"></div>
     </div>
   </div>
 
@@ -103,8 +144,12 @@
       const messageForm = document.getElementById('messageForm');
       const messageInput = document.getElementById('messageInput');
       const messagesDiv = document.getElementById('messages');
+      const fileInput = document.getElementById('fileInput');
+      const imagePreview = document.getElementById('imagePreview');
 
       const socket = io();
+
+      socket.emit('joinRoom', '<%= user.id %>');
 
       function scrollToBottom() {
         messageArea.scrollTop = messageArea.scrollHeight;
@@ -112,36 +157,115 @@
 
       scrollToBottom();
 
-      socket.on('chat message', (msg) => {
-        console.log('Message received:', msg);
+      function displayMessage(msg) {
         const isCurrentUser = msg.senderId === '<%= user.id %>';
-
         const messageElement = document.createElement('div');
         messageElement.classList.add('flex', isCurrentUser ? 'justify-end' : 'justify-start');
+
+        let messageContent = '';
+        if (msg.type === 'image') {
+          messageContent = `<img src="${msg.content}" alt="Image" class="max-w-xs rounded-xl shadow-md" />`;
+        } else {
+          messageContent = msg.content;
+        }
+
         messageElement.innerHTML = `
-            <div class="bg-${isCurrentUser ? 'blue-700' : 'gray-700'} text-white p-3 rounded-xl max-w-xs break-words shadow-md">
-              ${msg.content}
-              <div class="text-xs text-${isCurrentUser ? 'blue-200' : 'gray-400'} mt-1 text-${isCurrentUser ? 'right' : 'left'}">
-                ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </div>
+          <div class="bg-${isCurrentUser ? 'blue-700' : 'gray-700'} text-white p-3 rounded-xl max-w-xs break-words shadow-md">
+            ${messageContent}
+            <div class="text-xs text-${isCurrentUser ? 'blue-200' : 'gray-400'} mt-1 text-${isCurrentUser ? 'right' : 'left'}">
+              ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
-          `;
+          </div>
+        `;
 
         messagesDiv.appendChild(messageElement);
         scrollToBottom();
+      }
+
+      socket.on('chat message', (msg) => {
+        console.log('Message received:', msg);
+        displayMessage(msg);
       });
 
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const imageUrl = event.target.result;
+            imagePreview.innerHTML = `<img src="${imageUrl}" alt="Preview" class="max-h-48 rounded-xl" />`;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      document.addEventListener('paste', (event) => {
+        const items = (event.clipboardData || event.clipboardData).items;
+        let blob = null;
+
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf("image") === 0) {
+            blob = items[i].getAsFile();
+            break;
+          }
+        }
+
+        if (blob) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const imageData = event.target.result;
+            socket.emit('chat message', {
+              senderId: '<%= user.id %>',
+              receiverId: '<%= targetUser.id %>',
+              type: 'image',
+              content: imageData
+            });
+            imagePreview.innerHTML = '';
+            fileInput.value = '';
+            const pasteIndicator = document.getElementById('pasteIndicator');
+            pasteIndicator.classList.add('hidden');
+          };
+          reader.readAsDataURL(blob);
+          const pasteIndicator = document.getElementById('pasteIndicator');
+          pasteIndicator.classList.add('hidden');
+        } else {
+          const pasteIndicator = document.getElementById('pasteIndicator');
+          pasteIndicator.classList.remove('hidden');
+          setTimeout(() => {
+            pasteIndicator.classList.add('hidden');
+          }, 3000)
+        }
+      });
 
       messageForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const messageContent = messageInput.value.trim();
-        if (!messageContent) return;
+        const file = fileInput.files[0];
 
-        socket.emit('chat message', {
-          senderId: '<%= user.id %>',
-          receiverId: '<%= targetUser.id %>',
-          content: messageContent
-        });
+        if (!messageContent && !file) return;
+
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const imageData = event.target.result;
+            socket.emit('chat message', {
+              senderId: '<%= user.id %>',
+              receiverId: '<%= targetUser.id %>',
+              type: 'image',
+              content: imageData
+            });
+            imagePreview.innerHTML = '';
+            fileInput.value = '';
+          };
+          reader.readAsDataURL(file);
+        } else {
+          socket.emit('chat message', {
+            senderId: '<%= user.id %>',
+            receiverId: '<%= targetUser.id %>',
+            type: 'text',
+            content: messageContent
+          });
+        }
 
         messageInput.value = '';
       });

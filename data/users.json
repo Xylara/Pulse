@@ -5,9 +5,7 @@
     "username": "playstation451",
     "password": "$2b$10$g1.eXDKhv/V6KBWuMtx1Y.I3hXL2itBwQOZ0Lt1e2Ch.XfU5L3xTm",
     "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
-    "friends": [
-      "s"
-    ],
+    "friends": [],
     "sentFriendRequests": [],
     "receivedFriendRequests": []
   },
@@ -18,7 +16,30 @@
     "password": "$2b$10$gC5xxsNxu8jDwrXaro6ljuiBgbBRtG23aMVbugSyoF8cpcoQMWTAe",
     "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
     "friends": [
-      "playstation451"
+      "pickle",
+      "NiggaFarts"
+    ],
+    "sentFriendRequests": [],
+    "receivedFriendRequests": []
+  },
+  {
+    "id": "630661774870733",
+    "email": "pickle@pickle.com",
+    "username": "pickle",
+    "password": "$2b$10$Z1ov9iO23l2pVoo0Rb2HUO8GCudf26np0IqYA8ZXjSdkEjuJoGnCC",
+    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
+    "friends": [],
+    "sentFriendRequests": [],
+    "receivedFriendRequests": []
+  },
+  {
+    "id": "805723992352687",
+    "email": "brucerobjohnson@gmail.com",
+    "username": "NiggaFarts",
+    "password": "$2b$10$Wbzhw/TZ7vitkJ34O9IQIOlwOH2j6x2sIIhZXPkP8Dd1JbzY2M2Om",
+    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
+    "friends": [
+      "s"
     ],
     "sentFriendRequests": [],
     "receivedFriendRequests": []
