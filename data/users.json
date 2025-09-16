@@ -5,7 +5,9 @@
     "username": "playstation451",
     "password": "$2b$10$g1.eXDKhv/V6KBWuMtx1Y.I3hXL2itBwQOZ0Lt1e2Ch.XfU5L3xTm",
     "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
-    "friends": [],
+    "friends": [
+      "s"
+    ],
     "sentFriendRequests": [],
     "receivedFriendRequests": []
   },
@@ -17,7 +19,8 @@
     "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
     "friends": [
       "pickle",
-      "NiggaFarts"
+      "NiggaFarts",
+      "playstation451"
     ],
     "sentFriendRequests": [],
     "receivedFriendRequests": []

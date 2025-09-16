@@ -2,6 +2,8 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
+    "crypto-js": "^4.2.0",
+    "crypto.js": "^3.3.4",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
@@ -13,7 +15,6 @@
   "version": "1.0.0",
   "description": "A selfhosted discord like application",
   "main": "index.js",
-  "devDependencies": {},
   "scripts": {
     "start": "node index.js"
   },

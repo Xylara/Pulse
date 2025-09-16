@@ -10,6 +10,7 @@ const authMiddleware = require('./middleware/auth');
 const accountRoutes = require('./routes/account');
 const socketIO = require('socket.io');
 const http = require('http');
+const CryptoJS = require('crypto-js');
 
 const server = http.createServer(app);
 
@@ -42,11 +43,16 @@ io.on('connection', (socket) => {
 
   socket.on('chat message', (msg) => {
     const { senderId, receiverId, type, content } = msg;
+
+    const secretKey = 'my-secret-key';
+
+    const encryptedContent = CryptoJS.AES.encrypt(content, secretKey).toString();
+
     const newMessage = {
       senderId: senderId,
       receiverId: receiverId,
       type: type,
-      content: content,
+      content: encryptedContent,
       timestamp: new Date().toISOString()
     };
 

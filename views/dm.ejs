@@ -8,6 +8,7 @@
   <title>Pulse - DM with <%= targetUser.username %></title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <style>
     .message-area::-webkit-scrollbar {
       width: 8px;
@@ -77,28 +78,20 @@
     <main class="flex-1 p-4 overflow-y-auto message-area">
       <div id="messages" class="space-y-4">
         <% messages.forEach(message => { %>
-        <% if (message.senderId === user.id) { %>
-        <div class="flex justify-end">
-          <div class="bg-blue-700 text-white p-3 rounded-xl max-w-xs break-words shadow-md">
-            <% if (message.type === 'image') { %>
+        <% if (message.type === 'image') { %>
+        <div class="flex <%= message.senderId === user.id ? 'justify-end' : 'justify-start' %>">
+          <div class="bg-<%= message.senderId === user.id ? 'blue-700' : 'gray-700' %> text-white p-3 rounded-xl max-w-xs break-words shadow-md">
             <img src="<%= message.content %>" alt="Image" class="max-w-xs rounded-xl shadow-md" />
-            <% } else { %>
-            <%= message.content %>
-            <% } %>
-            <div class="text-xs text-blue-200 mt-1 text-right">
+            <div class="text-xs text-<%= message.senderId === user.id ? 'blue-200' : 'gray-400' %> mt-1 text-<%= message.senderId === user.id ? 'right' : 'left' %>">
               <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
             </div>
           </div>
         </div>
         <% } else { %>
-        <div class="flex justify-start">
-          <div class="bg-gray-700 text-white p-3 rounded-xl max-w-xs break-words shadow-md">
-            <% if (message.type === 'image') { %>
-            <img src="<%= message.content %>" alt="Image" class="max-w-xs rounded-xl shadow-md" />
-            <% } else { %>
-            <%= message.content %>
-            <% } %>
-            <div class="text-xs text-gray-400 mt-1 text-left">
+        <div class="flex <%= message.senderId === user.id ? 'justify-end' : 'justify-start' %>">
+          <div class="bg-<%= message.senderId === user.id ? 'blue-700' : 'gray-700' %> text-white p-3 rounded-xl max-w-xs break-words shadow-md">
+            <span class="encrypted-message" data-encrypted-content="<%= message.content %>">Loading...</span>
+            <div class="text-xs text-<%= message.senderId === user.id ? 'blue-200' : 'gray-400' %> mt-1 text-<%= message.senderId === user.id ? 'right' : 'left' %>">
               <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
             </div>
           </div>
@@ -155,18 +148,59 @@
         messageArea.scrollTop = messageArea.scrollHeight;
       }
 
+      function decryptExistingMessages() {
+        const secretKey = 'my-secret-key';
+
+        document.querySelectorAll('.encrypted-message').forEach(span => {
+          const encryptedContent = span.dataset.encryptedContent;
+          if (encryptedContent) {
+            try {
+              const decryptedContent = CryptoJS.AES.decrypt(encryptedContent, secretKey).toString(CryptoJS.enc.Utf8);
+              span.textContent = decryptedContent;
+            } catch (error) {
+              console.error('Decryption error for existing message:', error);
+              span.textContent = 'Failed to decrypt message';
+            }
+          }
+        });
+      }
+
+      const checkCryptoJSInterval = setInterval(() => {
+        if (typeof CryptoJS !== 'undefined' && CryptoJS.AES) {
+          clearInterval(checkCryptoJSInterval);
+          decryptExistingMessages();
+          scrollToBottom();
+        }
+      }, 100);
+
       scrollToBottom();
+
 
       function displayMessage(msg) {
         const isCurrentUser = msg.senderId === '<%= user.id %>';
         const messageElement = document.createElement('div');
         messageElement.classList.add('flex', isCurrentUser ? 'justify-end' : 'justify-start');
 
+        const secretKey = 'my-secret-key';
+
+        let decryptedContent = '';
+        if (typeof CryptoJS !== 'undefined') {
+          try {
+            decryptedContent = CryptoJS.AES.decrypt(msg.content, secretKey).toString(CryptoJS.enc.Utf8);
+          } catch (error) {
+            decryptedContent = 'Failed to decrypt message';
+            console.error('Decryption error:', error);
+          }
+        } else {
+          decryptedContent = 'CryptoJS not loaded';
+        }
+
+
         let messageContent = '';
         if (msg.type === 'image') {
           messageContent = `<img src="${msg.content}" alt="Image" class="max-w-xs rounded-xl shadow-md" />`;
         } else {
-          messageContent = msg.content;
+          messageContent = decryptedContent;
         }
 
         messageElement.innerHTML = `
