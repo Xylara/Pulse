@@ -43,6 +43,7 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use('/others', express.static('others'));
 app.use(bodyparser.urlencoded({ extended: false }));
+app.use(express.json());
 
 app.use(expressSession({
   secret: 'your-secret-key',

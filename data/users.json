@@ -4,16 +4,13 @@
     "email": "a@a",
     "username": "playstation451",
     "password": "$2b$10$g1.eXDKhv/V6KBWuMtx1Y.I3hXL2itBwQOZ0Lt1e2Ch.XfU5L3xTm",
-    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
+    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/profile-1758834304135.png.png",
     "friends": [
-      "s",
-      "Amaya"
+      "Amaya",
+      "s"
     ],
     "sentFriendRequests": [],
-    "receivedFriendRequests": [],
-    "GroupChats": [
-      "438272178399103"
-    ]
+    "receivedFriendRequests": []
   },
   {
     "id": "465545010385632",
@@ -22,69 +19,28 @@
     "password": "$2b$10$gC5xxsNxu8jDwrXaro6ljuiBgbBRtG23aMVbugSyoF8cpcoQMWTAe",
     "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
     "friends": [
-      "pickle1"
+      "playstation451"
     ],
     "sentFriendRequests": [],
     "receivedFriendRequests": []
   },
   {
-    "id": "630661774870733",
-    "email": "pickle@pickle.com",
-    "username": "pickle",
-    "password": "$2b$10$Z1ov9iO23l2pVoo0Rb2HUO8GCudf26np0IqYA8ZXjSdkEjuJoGnCC",
-    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
-    "friends": [],
-    "sentFriendRequests": [],
-    "receivedFriendRequests": []
-  },
-  {
-    "id": "805723992352687",
-    "email": "brucerobjohnson@gmail.com",
-    "username": "NiggaFarts",
-    "password": "$2b$10$Wbzhw/TZ7vitkJ34O9IQIOlwOH2j6x2sIIhZXPkP8Dd1JbzY2M2Om",
-    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
-    "friends": [
-      "s"
-    ],
-    "sentFriendRequests": [],
-    "receivedFriendRequests": []
-  },
-  {
-    "id": "288785191743325",
-    "email": "pickle@pickle.pickle",
-    "username": "pickle1",
-    "password": "$2b$10$CkXe1xDQzBWZyW2Kg2UGseQpKeKHhvKI/3btcWxr6uSqCm9KLfc7C",
-    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
-    "friends": [
-      "s"
-    ],
-    "sentFriendRequests": [],
-    "receivedFriendRequests": []
-  },
-  {
-    "id": "512996937339886",
+    "id": "988767508014895",
     "email": "nigger@nigger.nigger",
     "username": "Amaya",
-    "password": "$2b$10$2BuZRkdmNQiSlRUp9BhBEOHIsf9Pl/nHnAisKvlXA2vOY58Qcccgk6",
-    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
+    "password": "$2b$10$ZdDwP.OKTl9oi3l8vRGeSukBZutx2.96T4rf.LchcOKGuL21Cr1Uq",
+    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/profile-1758834336880.png.png",
     "friends": [
       "playstation451"
     ],
     "sentFriendRequests": [],
-    "receivedFriendRequests": [
-      "nigger"
-    ]
+    "receivedFriendRequests": []
   },
   {
-    "id": "156893884251307",
+    "id": "673369448489706",
     "email": "nigger@nigger",
     "username": "nigger",
-    "password": "$2b$10$AaRrsiSPjR9YXQ0KUsPw4Oy2ATSVTtUFkZFDvZxGY13eGS7kkhkaO",
-    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
-    "friends": [],
-    "sentFriendRequests": [
-      "Amaya"
-    ],
-    "receivedFriendRequests": []
+    "password": "$2b$10$cIQWsO3nBAz3ZZiW1fwiwe.LtJGxaN7K1eEtSlwU5KckFur7aOi7q",
+    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png"
   }
 ]
