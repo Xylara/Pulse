@@ -65,9 +65,11 @@ io.on('connection', (socket) => {
   socket.on('chat message', (msg) => {
     const { senderId, receiverId, type, content } = msg;
 
-    const secretKey = 'my-secret-key';
-
-    const encryptedContent = CryptoJS.AES.encrypt(content, secretKey).toString();
+    let encryptedContent = content;
+    if (type === 'text') {
+      const secretKey = 'my-secret-key';
+      encryptedContent = CryptoJS.AES.encrypt(content, secretKey).toString();
+    }
 
     const newMessage = {
       senderId: senderId,

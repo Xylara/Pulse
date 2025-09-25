@@ -78,25 +78,30 @@
     <main class="flex-1 p-4 overflow-y-auto message-area">
       <div id="messages" class="space-y-4">
         <% messages.forEach(message => { %>
-        <% if (message.type === 'image') { %>
-        <div class="flex <%= message.senderId === user.id ? 'justify-end' : 'justify-start' %>">
-          <div class="bg-<%= message.senderId === user.id ? 'blue-700' : 'gray-700' %> text-white p-3 rounded-xl max-w-xs break-words shadow-md">
-            <img src="<%= message.content %>" alt="Image" class="max-w-xs rounded-xl shadow-md" />
-            <div class="text-xs text-<%= message.senderId === user.id ? 'blue-200' : 'gray-400' %> mt-1 text-<%= message.senderId === user.id ? 'right' : 'left' %>">
-              <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
+        <div class="mb-2">
+          <div class="flex items-start">
+            <img src="<%= message.senderId === user.id ? user.profilepicture : targetUser.profilepicture %>" alt="<%= message.senderId === user.id ? user.username : targetUser.username %> Profile"
+              class="w-8 h-8 rounded-full mr-3">
+            <div>
+              <div class="font-semibold"><%= message.senderId === user.id ? user.username : targetUser.username %></div>
+              <% if (message.type === 'image') { %>
+              <div class="bg-<%= message.senderId === user.id ? 'blue-700' : 'gray-700' %> text-white p-3 rounded-xl max-w-xs break-words shadow-md">
+                <img src="<%= message.content %>" alt="Image" class="max-w-xs rounded-xl shadow-md" />
+                <div class="text-xs text-<%= message.senderId === user.id ? 'blue-200' : 'gray-400' %> mt-1 text-<%= message.senderId === user.id ? 'right' : 'left' %>">
+                  <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
+                </div>
+              </div>
+              <% } else { %>
+              <div class="bg-<%= message.senderId === user.id ? 'blue-700' : 'gray-700' %> text-white p-3 rounded-xl max-w-xs break-words shadow-md">
+                <span class="encrypted-message" data-encrypted-content="<%= message.content %>">Loading...</span>
+                <div class="text-xs text-<%= message.senderId === user.id ? 'blue-200' : 'gray-400' %> mt-1 text-<%= message.senderId === user.id ? 'right' : 'left' %>">
+                  <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
+                </div>
+              </div>
+              <% } %>
             </div>
           </div>
         </div>
-        <% } else { %>
-        <div class="flex <%= message.senderId === user.id ? 'justify-end' : 'justify-start' %>">
-          <div class="bg-<%= message.senderId === user.id ? 'blue-700' : 'gray-700' %> text-white p-3 rounded-xl max-w-xs break-words shadow-md">
-            <span class="encrypted-message" data-encrypted-content="<%= message.content %>">Loading...</span>
-            <div class="text-xs text-<%= message.senderId === user.id ? 'blue-200' : 'gray-400' %> mt-1 text-<%= message.senderId === user.id ? 'right' : 'left' %>">
-              <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
-            </div>
-          </div>
-        </div>
-        <% } %>
         <% }) %>
       </div>
     </main>
@@ -105,22 +110,18 @@
       <form id="messageForm" class="flex items-center gap-4">
         <input type="text" id="messageInput" placeholder="Type your message..."
           class="flex-grow p-3 rounded-full bg-gray-800 text-white focus:bg-gray-700 outline-none transition"
-          autocomplete="off" required />
+          autocomplete="off" />
         <input type="file" id="fileInput" class="hidden" accept="image/*, image/gif" />
         <div class="relative">
           <label for="fileInput"
             class="cursor-pointer p-3 rounded-full hover:bg-gray-700 transition">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
               </path>
             </svg>
           </label>
-          <span id="pasteIndicator" class="absolute top-0 right-0 flex h-3 w-3 hidden">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
-          </span>
         </div>
         <button type="submit"
           class="bg-blue-700 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full shadow-md transition duration-300">
@@ -131,7 +132,11 @@
     </div>
   </div>
 
-  <script>
+<script>
+    window.onload = function() {
+      window.scrollTo(0,document.body.scrollHeight);
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
       const messageArea = document.querySelector('.message-area');
       const messageForm = document.getElementById('messageForm');
@@ -139,13 +144,17 @@
       const messagesDiv = document.getElementById('messages');
       const fileInput = document.getElementById('fileInput');
       const imagePreview = document.getElementById('imagePreview');
+      let currentImageFile = null;
 
       const socket = io();
+      const CDN_BASE_URL = 'https://cdn.hyghj.eu.org';
+      const CDN_UPLOAD_PATH = '/upload';
+      const AUTH_TOKEN = '88740246818a333ee9f24ce2a5ad73af';
 
       socket.emit('joinRoom', '<%= user.id %>');
 
       function scrollToBottom() {
-        messageArea.scrollTop = messageArea.scrollHeight;
+        window.scrollTo(0, document.body.scrollHeight);
       }
 
       function decryptExistingMessages() {
@@ -169,143 +178,171 @@
         if (typeof CryptoJS !== 'undefined' && CryptoJS.AES) {
           clearInterval(checkCryptoJSInterval);
           decryptExistingMessages();
-          scrollToBottom();
         }
       }, 100);
 
-      scrollToBottom();
+      const observer = new MutationObserver(() => {
+        scrollToBottom();
+      });
 
+      observer.observe(messagesDiv, { childList: true });
 
-      function displayMessage(msg) {
+function displayMessage(msg) {
         const isCurrentUser = msg.senderId === '<%= user.id %>';
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('flex', isCurrentUser ? 'justify-end' : 'justify-start');
 
-        const secretKey = 'my-secret-key';
+        const messageContainer = document.createElement('div');
+        messageContainer.classList.add('mb-2');
 
-        let decryptedContent = '';
-        if (typeof CryptoJS !== 'undefined') {
-          try {
-            decryptedContent = CryptoJS.AES.decrypt(msg.content, secretKey).toString(CryptoJS.enc.Utf8);
-          } catch (error) {
-            decryptedContent = 'Failed to decrypt message';
-            console.error('Decryption error:', error);
-          }
-        } else {
-          decryptedContent = 'CryptoJS not loaded';
-        }
-
-
-        let messageContent = '';
-        if (msg.type === 'image') {
-          messageContent = `<img src="${msg.content}" alt="Image" class="max-w-xs rounded-xl shadow-md" />`;
-        } else {
-          messageContent = decryptedContent;
-        }
-
-        messageElement.innerHTML = `
-          <div class="bg-${isCurrentUser ? 'blue-700' : 'gray-700'} text-white p-3 rounded-xl max-w-xs break-words shadow-md">
-            ${messageContent}
-            <div class="text-xs text-${isCurrentUser ? 'blue-200' : 'gray-400'} mt-1 text-${isCurrentUser ? 'right' : 'left'}">
-              ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        messageContainer.innerHTML = `
+          <div class="flex items-start ${isCurrentUser ? 'flex-row-reverse' : ''}">
+            <img src="${isCurrentUser ? '<%= user.profilepicture %>' : '<%= targetUser.profilepicture %>'} " alt="${isCurrentUser ? '<%= user.username %>' : '<%= targetUser.username %>'} Profile"
+              class="w-8 h-8 rounded-full mr-3">
+            <div>
+              <div class="font-semibold ${isCurrentUser ? 'text-right' : 'text-left'}">${isCurrentUser ? '<%= user.username %>' : '<%= targetUser.username %>'}</div>
+              <div class="bg-${isCurrentUser ? 'blue-700' : 'gray-700'} text-white p-3 rounded-xl max-w-xs break-words shadow-md">
+                ${msg.type === 'image' ? `<img src="${msg.content}" alt="Image" class="max-w-xs rounded-xl shadow-md" />` : decryptMessage(msg.content)}
+                <div class="text-xs text-${isCurrentUser ? 'blue-200' : 'gray-400'} mt-1 text-${isCurrentUser ? 'right' : 'left'}">
+                  ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
             </div>
           </div>
         `;
-
-        messagesDiv.appendChild(messageElement);
+console.log('Message content:', msg.content);
+        messagesDiv.appendChild(messageContainer);
         scrollToBottom();
       }
+
+function decryptMessage(encryptedContent) {
+  const secretKey = 'my-secret-key';
+  try {
+    return CryptoJS.AES.decrypt(encryptedContent, secretKey).toString(CryptoJS.enc.Utf8);
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return encryptedContent;
+  }
+}
 
       socket.on('chat message', (msg) => {
         console.log('Message received:', msg);
         displayMessage(msg);
       });
 
-      fileInput.addEventListener('change', (e) => {
+      fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const imageUrl = event.target.result;
-            imagePreview.innerHTML = `<img src="${imageUrl}" alt="Preview" class="max-h-48 rounded-xl" />`;
-          };
-          reader.readAsDataURL(file);
+          currentImageFile = file;
+          imagePreview.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="Preview" class="max-h-48 rounded-xl" />`;
+        } else {
+          currentImageFile = null;
+          imagePreview.innerHTML = '';
         }
       });
 
-      document.addEventListener('paste', (event) => {
+      document.addEventListener('paste', async (event) => {
         const items = (event.clipboardData || event.clipboardData).items;
         let blob = null;
 
         for (let i = 0; i < items.length; i++) {
-          if (items[i.type.indexOf("image") === 0]) {
+          if (items[i].type.indexOf("image") === 0) {
             blob = items[i].getAsFile();
             break;
           }
         }
 
-        if (blob) {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const imageData = event.target.result;
-            socket.emit('chat message', {
-              senderId: '<%= user.id %>',
-              receiverId: '<%= targetUser.id %>',
-              type: 'image',
-              content: imageData
-            });
-            imagePreview.innerHTML = '';
+          if (blob) {
+            currentImageFile = blob;
+            imagePreview.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="Preview" class="max-h-48 rounded-xl" />`;
             fileInput.value = '';
-            const pasteIndicator = document.getElementById('pasteIndicator');
-            pasteIndicator.classList.add('hidden');
-          };
-          reader.readAsDataURL(blob);
-          const pasteIndicator = document.getElementById('pasteIndicator');
-          pasteIndicator.classList.add('hidden');
-        } else {
-          const pasteIndicator = document.getElementById('pasteIndicator');
-          pasteIndicator.classList.remove('hidden');
-          setTimeout(() => {
-            pasteIndicator.classList.add('hidden');
-          }, 3000)
-        }
+          }
       });
 
-      messageForm.addEventListener('submit', (e) => {
+      async function uploadImageToCDN(file) {
+        const formData = new FormData();
+        const filename = `image-${Math.random().toString(36).substring(2, 22)}.png`;
+        formData.append('file', file, filename);
+        formData.append('folder', 'image');
+        formData.append('filename', filename);
+ 
+        try {
+          const response = await fetch(CDN_BASE_URL + CDN_UPLOAD_PATH, {
+            method: 'POST',
+            headers: {
+              'Authorization': AUTH_TOKEN,
+            },
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('CDN Upload Failed:', response.status, response.statusText, errorText);
+            alert(`CDN Upload Failed: ${response.status} ${response.statusText} - ${errorText}`);
+            throw new Error(`CDN Upload Failed: ${response.status} ${response.statusText} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('CDN Upload Response (full data):', data);
+          if (data && data.fileUrl) {
+            return CDN_BASE_URL + data.fileUrl;
+          } else {
+            console.error('CDN Upload Response did not contain a fileUrl:', data);
+            alert('Failed to upload image: CDN response missing fileUrl. Check console for full response.');
+            return null;
+          }
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          alert('Failed to upload image. Please try again. Check the console for details.');
+          return null;
+        }
+      }
+
+      messageForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const messageContent = messageInput.value.trim();
-        const file = fileInput.files[0];
 
-        if (!messageContent && !file) return;
+        if (!messageContent && !currentImageFile) return;
 
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const imageData = event.target.result;
-            socket.emit('chat message', {
-              senderId: '<%= user.id %>',
-              receiverId: '<%= targetUser.id %>',
-              type: 'image',
-              content: imageData
-            });
-            imagePreview.innerHTML = '';
-            fileInput.value = '';
-          };
-          reader.readAsDataURL(file);
-        } else {
+        let imageUrl = null;
+
+        if (currentImageFile) {
+          imageUrl = await uploadImageToCDN(currentImageFile);
+        }
+
+        if (imageUrl) {
+          console.log('Emitting image message:', {
+            senderId: '<%= user.id %>',
+            receiverId: '<%= targetUser.id %>',
+            type: 'image',
+            content: imageUrl
+          });
+          socket.emit('chat message', {
+            senderId: '<%= user.id %>',
+            receiverId: '<%= targetUser.id %>',
+            type: 'image',
+            content: imageUrl
+          });
+          imagePreview.innerHTML = '';
+          fileInput.value = '';
+          currentImageFile = null;
+          scrollToBottom();
+        } else if (currentImageFile) {
+          console.error('Image URL is null, not emitting image message.');
+          alert('Image upload failed, cannot send image message.');
+        }
+
+        if (messageContent) {
           socket.emit('chat message', {
             senderId: '<%= user.id %>',
             receiverId: '<%= targetUser.id %>',
             type: 'text',
             content: messageContent
           });
+          messageInput.value = '';
+          scrollToBottom();
         }
-
-        messageInput.value = '';
       });
     });
   </script>
 </body>
 
 </html>
-
