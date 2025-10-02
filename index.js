@@ -175,11 +175,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('webrtc-signal', (data) => {
-    const { dmRoomId, senderId, targetUserId } = data;
+    const { dmRoomId, senderId, targetUserId, signal } = data;
     if (dmRoomId && activeCalls[dmRoomId]) {
-      socket.to(dmRoomId).emit('webrtc-signal', data);
+      socket.to(dmRoomId).emit('webrtc-signal', { dmRoomId, senderId, signal });
     } else if (targetUserId) {
-      io.to(targetUserId).emit('webrtc-signal', data);
+      io.to(targetUserId).emit('webrtc-signal', { dmRoomId, senderId, signal });
     } else {
       console.warn('webrtc-signal received without dmRoomId or targetUserId:', data);
     }
