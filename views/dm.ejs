@@ -83,6 +83,7 @@
         <div id="callControls" class="bg-gray-800 p-2 text-center text-sm hidden">
           <div id="callParticipants" class="flex items-center justify-center space-x-2 mb-2">
          </div>
+         <div id="remoteAudioContainer" class="hidden"></div>
          <button id="muteButton" class="p-2 rounded-full hover:bg-gray-700">Mute</button>
          <button id="hangupButton" class="p-2 rounded-full hover:bg-red-700">Leave Call</button>
        </div>
@@ -531,6 +532,16 @@ function decryptMessage(encryptedContent) {
         return;
       }
 
+      if (signal.candidate) {
+        try {
+          console.log('Adding ICE candidate for', senderId, ':', signal.candidate);
+          peer.addIceCandidate(signal.candidate);
+        } catch (error) {
+          console.error('Error adding ICE candidate for', senderId, ':', error);
+        }
+        return;
+      }
+
       try {
         console.log('Signaling peer:', senderId, 'with signal:', signal);
         peer.signal(signal);
@@ -590,7 +601,8 @@ function decryptMessage(encryptedContent) {
       console.log('Initializing SimplePeer for', remoteUserId, 'initiator:', isInitiator, 'with localStream:', localStream);
       const peer = new SimplePeer({
         initiator: isInitiator,
-        trickle: false, 
+        trickle: true,
+        iceTransportPolicy: 'all',
         stream: localStream
       });
 
@@ -618,6 +630,16 @@ function decryptMessage(encryptedContent) {
         });
       });
 
+      peer.on('iceCandidate', (candidate) => {
+        console.log('ICE candidate generated for', remoteUserId, ':', candidate);
+        socket.emit('webrtc-signal', {
+          dmRoomId: dmRoomId,
+          targetUserId: remoteUserId,
+          senderId: currentUserId,
+          signal: { candidate: candidate }
+        });
+      });
+
       peer.on('connect', () => {
         console.log('SimplePeer connected to', remoteUserId);
       });
@@ -625,8 +647,18 @@ function decryptMessage(encryptedContent) {
       peer.on('stream', (stream) => {
         console.log('Remote stream received from:', remoteUserId, stream);
         const remoteAudio = new Audio();
+        remoteAudio.autoplay = true; 
+        remoteAudio.muted = true;
         remoteAudio.srcObject = stream;
-        remoteAudio.play();
+        remoteAudio.id = `remote-audio-${remoteUserId}`;
+        document.getElementById('remoteAudioContainer').appendChild(remoteAudio);
+
+        remoteAudio.play().then(() => {
+          console.log(`Remote audio from ${remoteUserId} started playing.`);
+          remoteAudio.muted = false;
+        }).catch(error => {
+          console.warn(`Autoplay prevented for ${remoteUserId}. User interaction might be needed.`, error);
+        });
         setupAudioActivityDetection(stream, remoteUserId);
       });
 
@@ -696,7 +728,13 @@ function decryptMessage(encryptedContent) {
         const newParticipants = callState.participants.filter(pId => pId !== currentUserId && !currentParticipants.includes(pId));
         const leavingParticipants = currentParticipants.filter(pId => !callState.participants.includes(pId));
         for (const newPId of newParticipants) {
-          await createPeer(newPId, true);
+          const shouldInitiate = currentUserId < newPId;
+          if (shouldInitiate) {
+            console.log(`User ${currentUserId} initiating peer to ${newPId}`);
+            await createPeer(newPId, true);
+          } else {
+            console.log(`User ${currentUserId} waiting for peer initiation from ${newPId}`);
+          }
         }
         for (const leavingPId of leavingParticipants) {
           if (peers[leavingPId]) {

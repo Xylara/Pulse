@@ -8,7 +8,8 @@
     "friends": [
       "Amaya",
       "s",
-      "ddd"
+      "ddd",
+      "pickle1"
     ],
     "sentFriendRequests": [],
     "receivedFriendRequests": []
@@ -62,6 +63,18 @@
     "email": "dd@d",
     "username": "ddd",
     "password": "$2b$10$a/vic.gWhVUiBycLESvlaOef6KOtn/YWJ41/ByAm6rIodaIl.rT8W",
+    "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
+    "friends": [
+      "playstation451"
+    ],
+    "sentFriendRequests": [],
+    "receivedFriendRequests": []
+  },
+  {
+    "id": "919865130367417",
+    "email": "nigger@ni.a",
+    "username": "pickle1",
+    "password": "$2b$10$Dmh.JtZRsGaFOX/lVp11SuY1/kfynwmjBytqhsMc1diXILDKLkizu",
     "profilepicture": "https://cdn.hyghj.eu.org/cdn/profile/default.png",
     "friends": [
       "playstation451"
