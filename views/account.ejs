@@ -154,9 +154,9 @@
       const profilePictureCanvas = document.getElementById('profilePictureCanvas');
       const ctx = profilePictureCanvas.getContext('2d');
 
-      const CDN_BASE_URL = 'https://cdn.hyghj.eu.org';
-      const CDN_UPLOAD_PATH = '/upload';
-      const AUTH_TOKEN = '88740246818a333ee9f24ce2a5ad73af';
+      const CDN_BASE_URL = '<%= process.env.CDN_BASE_URL %>';
+      const CDN_UPLOAD_PATH = '<%= process.env.CDN_UPLOAD_PATH %>';
+      const AUTH_TOKEN = '<%= process.env.CDN_AUTH_TOKEN %>';
 
       let currentProfileImageFile = null;
 

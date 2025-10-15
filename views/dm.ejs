@@ -198,10 +198,10 @@
         }
         return replacedText;
       }
-
-      const CDN_BASE_URL = 'https://cdn.hyghj.eu.org';
-      const CDN_UPLOAD_PATH = '/upload';
-      const AUTH_TOKEN = '88740246818a333ee9f24ce2a5ad73af';
+ 
+      const CDN_BASE_URL = '<%= process.env.CDN_BASE_URL %>';
+      const CDN_UPLOAD_PATH = '<%= process.env.CDN_UPLOAD_PATH %>';
+      const AUTH_TOKEN = '<%= process.env.CDN_AUTH_TOKEN %>';
 
 
       function scrollToBottom() {
@@ -209,7 +209,7 @@
       }
 
       function decryptExistingMessages() {
-        const secretKey = 'my-secret-key';
+        const secretKey = '<%= process.env.CRYPTO_SECRET_KEY %>';
 
         document.querySelectorAll('.encrypted-message').forEach(span => {
           const encryptedContent = span.dataset.encryptedContent;
@@ -266,7 +266,7 @@ console.log('Message content:', msg.content);
       }
 
 function decryptMessage(encryptedContent) {
-  const secretKey = 'my-secret-key';
+  const secretKey = '<%= process.env.CRYPTO_SECRET_KEY %>';
   try {
     let decryptedContent = CryptoJS.AES.decrypt(encryptedContent, secretKey).toString(CryptoJS.enc.Utf8);
     decryptedContent = replaceEmojis(decryptedContent);
@@ -708,7 +708,7 @@ function decryptMessage(encryptedContent) {
               return await response.json();
             } catch (error) {
               console.error('Error fetching participant username:', error);
-              return { id: pId, username: 'Unknown User', profilepicture: '/others/pulse.png' };
+              return { id: pId, username: 'Unknown User', profilepicture: '<%= process.env.DEFAULT_PROFILE_PICTURE %>' };
             }
           }
         }));

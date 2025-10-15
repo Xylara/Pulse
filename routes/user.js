@@ -38,11 +38,11 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     users.push({ 
-      id, 
-      email, 
-      username, 
+      id,
+      email,
+      username,
       password: hashedPassword,
-      profilepicture: 'https://cdn.hyghj.eu.org/cdn/profile/default.png'
+      profilepicture: process.env.DEFAULT_PROFILE_PICTURE
     });
     writeUsers(users);
 

@@ -1,6 +1,7 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 const expressSession = require('express-session');
 const bodyparser = require('body-parser');
 const { readUsers } = require('./utils/user');
@@ -51,7 +52,7 @@ app.use(bodyparser.urlencoded({ extended: false }));
 app.use(express.json());
 
 app.use(expressSession({
-  secret: 'your-secret-key',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true
 }));
@@ -139,7 +140,7 @@ io.on('connection', (socket) => {
 
     let encryptedContent = content;
     if (type === 'text') {
-      const secretKey = 'my-secret-key';
+      const secretKey = process.env.CRYPTO_SECRET_KEY;
       encryptedContent = CryptoJS.AES.encrypt(content, secretKey).toString();
     }
 
