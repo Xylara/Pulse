@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const { readUsers, writeUsers } = require('../utils/user');
+const { readUsers, writeUsers, updateUserField } = require('../utils/user');
 
-router.get('/account', (req, res) => {
+router.get('/account', async (req, res) => {
   const loggedInUser = req.session.user;
 
-  const users = readUsers();
+  const users = await readUsers();
   const currentUser = users.find(u => u.id === loggedInUser.id);
 
   if (!currentUser) {
@@ -29,7 +29,7 @@ router.get('/account', (req, res) => {
   res.render('account', { user: currentUser, error: null, success: successMessage });
 });
 
-router.post('/account/username', (req, res) => {
+router.post('/account/username', async (req, res) => {
   const { username } = req.body;
   const loggedInUser = req.session.user;
 
@@ -40,7 +40,7 @@ router.post('/account/username', (req, res) => {
     return res.status(400).render('account', { user: loggedInUser, error: 'Username cannot be empty.' });
   }
 
-  let users = readUsers();
+  let users = await readUsers();
   const userIndex = users.findIndex(u => u.id === loggedInUser.id);
 
   if (userIndex !== -1) {
@@ -50,7 +50,7 @@ router.post('/account/username', (req, res) => {
     }
 
     users[userIndex].username = username;
-    writeUsers(users);
+    await writeUsers(users);
 
     req.session.user.username = username;
     res.redirect('/account?success=usernameUpdated');
@@ -61,7 +61,7 @@ router.post('/account/username', (req, res) => {
   }
 });
 
-router.post('/account/email', (req, res) => {
+router.post('/account/email', async (req, res) => {
   const { email } = req.body;
   const loggedInUser = req.session.user;
 
@@ -72,7 +72,7 @@ router.post('/account/email', (req, res) => {
     return res.status(400).render('account', { user: loggedInUser, error: 'Please enter a valid email address.' });
   }
 
-  let users = readUsers();
+  let users = await readUsers();
   const userIndex = users.findIndex(u => u.id === loggedInUser.id);
 
   if (userIndex !== -1) {
@@ -82,7 +82,7 @@ router.post('/account/email', (req, res) => {
     }
 
     users[userIndex].email = email;
-    writeUsers(users);
+    await writeUsers(users);
 
     req.session.user.email = email;
     res.redirect('/account?success=emailUpdated');
@@ -110,7 +110,7 @@ router.post('/account/password', async (req, res) => {
     return res.status(400).render('account', { user: loggedInUser, error: 'New password must be at least 6 characters long.' });
   }
 
-  let users = readUsers();
+  let users = await readUsers();
   const userIndex = users.findIndex(u => u.id === loggedInUser.id);
 
   if (userIndex !== -1) {
@@ -123,7 +123,7 @@ router.post('/account/password', async (req, res) => {
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     users[userIndex].password = hashedNewPassword;
-    writeUsers(users);
+    await writeUsers(users);
 
     res.redirect('/account?success=passwordUpdated');
   } else {
@@ -133,7 +133,7 @@ router.post('/account/password', async (req, res) => {
   }
 });
 
-router.post('/account/profilepicture', (req, res) => {
+router.post('/account/profilepicture', async (req, res) => {
   const { profilepicture } = req.body;
   const loggedInUser = req.session.user;
 
@@ -145,14 +145,14 @@ router.post('/account/profilepicture', (req, res) => {
     return res.status(400).json({ error: 'Invalid profile picture URL.' });
   }
 
-  let users = readUsers();
-  const userIndex = users.findIndex(u => u.id === loggedInUser.id);
+  if (loggedInUser) {
+    await updateUserField(loggedInUser.id, 'profilepicture', profilepicture);
 
-  if (userIndex !== -1) {
-    users[userIndex].profilepicture = profilepicture;
-    writeUsers(users);
-
-    req.session.user.profilepicture = profilepicture;
+    const users = await readUsers();
+    const updatedUser = users.find(u => u.id === loggedInUser.id);
+    if (updatedUser) {
+      req.session.user = updatedUser;
+    }
     return res.status(200).json({ message: 'Profile picture updated successfully!' });
   } else {
     req.session.destroy(() => {

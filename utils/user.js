@@ -13,7 +13,16 @@ const readUsers = async () => {
       }
     });
     const users = response.data.flat();
-    return users;
+    const uniqueUsers = [];
+    const seenUserIds = new Set();
+
+    for (const user of users) {
+      if (!seenUserIds.has(user.id)) {
+        uniqueUsers.push(user);
+        seenUserIds.add(user.id);
+      }
+    }
+    return uniqueUsers;
   } catch (error) {
     console.error("Error reading user data from CDN:", error.message);
     return [];
@@ -39,4 +48,25 @@ const writeUsers = async (users) => {
   }
 };
 
-module.exports = { readUsers, writeUsers };
+const updateUserField = async (userId, fieldName, fieldValue) => {
+  try {
+    const payload = {
+      folder: CDN_USERS_FOLDER,
+      filename: CDN_USERS_FILENAME,
+      id: userId,
+      [fieldName]: fieldValue
+    };
+    await axios.post(`${CDN_BASE_URL}/update-json`, payload, {
+      headers: {
+        'Authorization': CDN_AUTH_TOKEN,
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log(`User ${userId}'s ${fieldName} updated on CDN.`);
+  } catch (error) {
+    console.error(`Error updating user ${userId}'s ${fieldName} on CDN:`, error.message);
+    throw error;
+  }
+};
+
+module.exports = { readUsers, writeUsers, updateUserField };
