@@ -18,7 +18,7 @@ const server = http.createServer(app);
 
 const io = socketIO(server);
 
-let messages = []; // Change to let as it will be reassigned
+let messages = [];
 
 const activeCalls = {};
 
@@ -62,7 +62,6 @@ async function updateMessagesOnCDN(messagesToUpdate) {
   }
 }
 
-// Initialize messages from CDN
 (async () => {
   messages = await fetchMessagesFromCDN();
   console.log('Messages loaded from CDN.');
@@ -176,7 +175,7 @@ io.on('connection', (socket) => {
     };
 
     messages.push(newMessage);
-    await updateMessagesOnCDN(messages); // Update messages on CDN
+    await updateMessagesOnCDN(messages);
 
     io.to([senderId, receiverId]).emit('chat message', newMessage);
   });
@@ -260,7 +259,7 @@ app.post('/dm/:id/send', authMiddleware, async (req, res) => {
     };
 
     messages.push(newMessage);
-    await updateMessagesOnCDN(messages); // Update messages on CDN
+    await updateMessagesOnCDN(messages);
 
     io.to([currentUser.id, targetUserId]).emit('chat message', newMessage);
   }
