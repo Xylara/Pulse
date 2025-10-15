@@ -7,12 +7,13 @@ const CDN_USERS_FILENAME = 'users.json';
 
 const readUsers = async () => {
   try {
-    const response = await axios.get(`${CDN_BASE_URL}/${CDN_USERS_FOLDER}/${CDN_USERS_FILENAME}`, {
+    const response = await axios.get(`${CDN_BASE_URL}/cdn/${CDN_USERS_FOLDER}/${CDN_USERS_FILENAME}`, {
       headers: {
         'Authorization': CDN_AUTH_TOKEN
       }
     });
-    return response.data;
+    const users = response.data.flat();
+    return users;
   } catch (error) {
     console.error("Error reading user data from CDN:", error.message);
     return [];

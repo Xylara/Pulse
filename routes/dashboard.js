@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { readUsers, writeUsers } = require('../utils/user');
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const message = req.session.message;
   delete req.session.message;
-  const allUsers = readUsers();
+  const allUsers = await readUsers();
   const currentUserData = allUsers.find(u => u.id === req.session.user.id);
 
   req.session.user = currentUserData;
@@ -22,7 +22,7 @@ router.get('/logout', (req, res) => {
   res.redirect('/login');
 });
 
-router.post('/add-friend', (req, res) => {
+router.post('/add-friend', async (req, res) => {
   const { friendUsername } = req.body;
   const currentUser = req.session.user;
 
@@ -36,7 +36,7 @@ router.post('/add-friend', (req, res) => {
     return res.redirect('/dashboard');
   }
 
-  let users = readUsers();
+  let users = await readUsers();
   const targetFriend = users.find(u => u.username === friendUsername);
 
   if (!targetFriend) {
@@ -87,11 +87,11 @@ router.post('/add-friend', (req, res) => {
   res.redirect('/dashboard');
 });
 
-router.post('/accept-friend-request', (req, res) => {
+router.post('/accept-friend-request', async (req, res) => {
   const { requesterUsername } = req.body;
   const currentUser = req.session.user;
 
-  let users = readUsers();
+  let users = await readUsers();
   const currentUserIndex = users.findIndex(u => u.id === currentUser.id);
   const requesterIndex = users.findIndex(u => u.username === requesterUsername);
 
@@ -133,11 +133,11 @@ router.post('/accept-friend-request', (req, res) => {
   res.redirect('/dashboard');
 });
 
-router.post('/reject-friend-request', (req, res) => {
+router.post('/reject-friend-request', async (req, res) => {
   const { requesterUsername } = req.body;
   const currentUser = req.session.user;
 
-  let users = readUsers();
+  let users = await readUsers();
   const currentUserIndex = users.findIndex(u => u.id === currentUser.id);
   const requesterIndex = users.findIndex(u => u.username === requesterUsername);
 
@@ -169,11 +169,11 @@ router.post('/reject-friend-request', (req, res) => {
   res.redirect('/dashboard');
 });
 
-router.post('/unfriend', (req, res) => {
+router.post('/unfriend', async (req, res) => {
   const { friendUsername } = req.body;
   const currentUser = req.session.user;
 
-  let users = readUsers();
+  let users = await readUsers();
   const currentUserIndex = users.findIndex(u => u.id === currentUser.id);
   const friendIndex = users.findIndex(u => u.username === friendUsername);
 

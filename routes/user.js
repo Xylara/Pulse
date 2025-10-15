@@ -20,6 +20,10 @@ router.post('/register', async (req, res) => {
   try {
     const { email, username, password, repeatPassword } = req.body;
 
+    if (!email || !username || !password || !repeatPassword) {
+      return res.status(400).render('register', { error: 'All fields are required' });
+    }
+
     if (password !== repeatPassword) {
       return res.render('register', { error: 'Passwords do not match' });
     }
@@ -30,7 +34,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).render('register', { error: 'Email already registered' });
     }
 
-    if (users.some(user => user.username.toLowerCase() === username.toLowerCase())) {
+    if (users.some(user => user.username && user.username.toLowerCase() === username.toLowerCase())) {
       return res.status(400).render('register', { error: 'Username is already taken' });
     }
 
