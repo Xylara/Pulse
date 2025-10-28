@@ -18,56 +18,33 @@ const server = http.createServer(app);
 
 const io = socketIO(server);
 
-let messages = [];
-
 const activeCalls = {};
 
 function getDmRoomId(userId1, userId2) {
   return [userId1, userId2].sort().join('-');
 }
 
-async function fetchMessagesFromCDN() {
+app.set('view engine', 'ejs');
+async function fetchDmMessages(dmRoomId) {
   try {
     const cdnBaseUrl = process.env.CDN_BASE_URL;
     const cdnAuthToken = process.env.CDN_AUTH_TOKEN;
-    const response = await axios.get(`${cdnBaseUrl}/cdn/others/messages.json`, {
+    const filename = `${dmRoomId}.json`;
+    const response = await axios.get(`${cdnBaseUrl}/cdn/others/${filename}`, {
       headers: {
         'Authorization': cdnAuthToken
       }
     });
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
-    console.error('Error fetching messages from CDN:', error.message);
+    if (error.response && error.response.status === 404) {
+      console.log(`No message history found for room ${dmRoomId}.`);
+    } else {
+      console.error(`Error fetching messages for room ${dmRoomId} from CDN:`, error.message);
+    }
     return [];
   }
 }
-
-async function updateMessagesOnCDN(messagesToUpdate) {
-  try {
-    const cdnBaseUrl = process.env.CDN_BASE_URL;
-    const cdnAuthToken = process.env.CDN_AUTH_TOKEN;
-    await axios.post(`${cdnBaseUrl}/update-json`, {
-      folder: '/cdn/others',
-      filename: 'messages.json',
-      data: messagesToUpdate
-    }, {
-      headers: {
-        'Authorization': cdnAuthToken,
-        'Content-Type': 'application/json'
-      }
-    });
-    console.log('Messages updated on CDN.');
-  } catch (error) {
-    console.error('Error updating messages on CDN:', error.message);
-  }
-}
-
-(async () => {
-  messages = await fetchMessagesFromCDN();
-  console.log('Messages loaded from CDN.');
-})();
-
-app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use('/others', express.static('others'));
 app.use(bodyparser.urlencoded({ extended: false }));
@@ -160,22 +137,13 @@ io.on('connection', (socket) => {
   socket.on('chat message', async (msg) => {
     const { senderId, receiverId, type, content } = msg;
 
-    let encryptedContent = content;
-    if (type === 'text') {
-      const secretKey = process.env.CRYPTO_SECRET_KEY;
-      encryptedContent = CryptoJS.AES.encrypt(content, secretKey).toString();
-    }
-
     const newMessage = {
       senderId: senderId,
       receiverId: receiverId,
       type: type,
-      content: encryptedContent,
+      content: content, 
       timestamp: new Date().toISOString()
     };
-
-    messages.push(newMessage);
-    await updateMessagesOnCDN(messages);
 
     io.to([senderId, receiverId]).emit('chat message', newMessage);
   });
@@ -229,12 +197,10 @@ app.get('/dm/:id', authMiddleware, async (req, res) => {
     return res.redirect('/dashboard?message=' + encodeURIComponent('You can only DM friends.'));
   }
 
-  const conversationMessages = messages
-    .filter(msg =>
-      (msg.senderId === currentUser.id && msg.receiverId === targetUserId) ||
-      (msg.senderId === targetUserId && msg.receiverId === currentUser.id)
-    )
-    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  const dmRoomId = getDmRoomId(currentUser.id, targetUserId);
+  let conversationMessages = await fetchDmMessages(dmRoomId);
+
+  conversationMessages = conversationMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
   res.render('dm', {
     user: currentUser,
@@ -246,23 +212,6 @@ app.get('/dm/:id', authMiddleware, async (req, res) => {
 
 app.post('/dm/:id/send', authMiddleware, async (req, res) => {
   const targetUserId = req.params.id;
-  const currentUser = req.session.user;
-  const messageContent = req.body.message;
-
-  if (messageContent && messageContent.trim()) {
-    const newMessage = {
-      senderId: currentUser.id,
-      receiverId: targetUserId,
-      type: 'text',
-      content: messageContent.trim(),
-      timestamp: new Date().toISOString()
-    };
-
-    messages.push(newMessage);
-    await updateMessagesOnCDN(messages);
-
-    io.to([currentUser.id, targetUserId]).emit('chat message', newMessage);
-  }
   res.redirect(`/dm/${targetUserId}`);
 });
 

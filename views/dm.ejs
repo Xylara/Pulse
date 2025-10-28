@@ -53,7 +53,7 @@
 </head>
 
 <body
-  class="bg-gradient-to-r from-gray-900 to-gray-800 font-sans text-white antialiased min-h-screen flex">
+  class="bg-gray-800 font-sans text-white antialiased min-h-screen flex">
 
   <div
     class="flex flex-col flex-1 {{ 'ml-14 transition-all duration-200 hover:ml-40' if sidebar was present }}">
@@ -92,29 +92,52 @@
 
     <main class="flex-1 p-4 overflow-y-auto message-area">
       <div id="messages" class="space-y-4">
-        <% messages.forEach(message => { %>
-        <div class="mb-2">
-          <div class="flex items-start">
-            <img src="<%= message.senderId === user.id ? user.profilepicture : targetUser.profilepicture %>" alt="<%= message.senderId === user.id ? user.username : targetUser.username %> Profile"
-              class="w-8 h-8 rounded-full mr-3">
-            <div>
-              <div class="font-semibold"><%= message.senderId === user.id ? user.username : targetUser.username %></div>
-              <% if (message.type === 'image') { %>
-              <div class="bg-<%= message.senderId === user.id ? 'blue-700' : 'gray-700' %> text-white p-3 rounded-xl max-w-xs break-words shadow-md">
-                <img src="<%= message.content %>" alt="Image" class="max-w-xs rounded-xl shadow-md" />
-                <div class="text-xs text-<%= message.senderId === user.id ? 'blue-200' : 'gray-400' %> mt-1 text-<%= message.senderId === user.id ? 'right' : 'left' %>">
-                  <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
-                </div>
-              </div>
-              <% } else { %>
-              <div class="bg-<%= message.senderId === user.id ? 'blue-700' : 'gray-700' %> text-white p-3 rounded-xl max-w-xs break-words shadow-md">
-                <span class="encrypted-message" data-encrypted-content="<%= message.content %>">Loading...</span>
-                <div class="text-xs text-<%= message.senderId === user.id ? 'blue-200' : 'gray-400' %> mt-1 text-<%= message.senderId === user.id ? 'right' : 'left' %>">
-                  <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
-                </div>
-              </div>
-              <% } %>
+        <% messages.forEach((message, index) => { %>
+        <%
+          let shouldGroup = false;
+          const previousMessage = index > 0 ? messages[index - 1] : null;
+          
+          if (previousMessage) {
+            const currentSenderId = message.senderId;
+            const previousSenderId = previousMessage.senderId;
+            
+            const currentTimestamp = new Date(message.timestamp);
+            const previousTimestamp = new Date(previousMessage.timestamp);
+            
+            const sameSender = currentSenderId === previousSenderId;
+            
+            const sameMinute = currentTimestamp.getFullYear() === previousTimestamp.getFullYear() &&
+                             currentTimestamp.getMonth() === previousTimestamp.getMonth() &&
+                             currentTimestamp.getDate() === previousTimestamp.getDate() &&
+                             currentTimestamp.getHours() === previousTimestamp.getHours() &&
+                             currentTimestamp.getMinutes() === previousTimestamp.getMinutes();
+
+            shouldGroup = sameSender && sameMinute;
+          }
+        %>
+        <div class="message-item flex items-start hover:bg-gray-700/50 p-1 rounded-lg -mx-1 <%= shouldGroup ? 'mt-[-1.25rem]' : '' %>" data-sender-id="<%= message.senderId %>" data-timestamp="<%= message.timestamp %>">
+          <% if (!shouldGroup) { %>
+          <img src="<%= message.senderId === user.id ? user.profilepicture : targetUser.profilepicture %>" alt="<%= message.senderId === user.id ? user.username : targetUser.username %> Profile"
+            class="w-10 h-10 rounded-full mr-4 mt-1">
+          <% } else { %>
+          <div class="w-10 h-10 mr-4"></div>
+          <% } %>
+          <div class="flex flex-col min-w-0">
+            <% if (!shouldGroup) { %>
+            <div class="message-header flex items-baseline mb-1">
+              <span class="font-semibold text-white mr-2"><%= message.senderId === user.id ? user.username : targetUser.username %></span>
+              <span class="text-xs text-gray-400"><%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %></span>
             </div>
+            <% } %>
+            <% if (message.type === 'image') { %>
+            <div class="max-w-full break-words">
+              <img src="<%= message.content %>" alt="Image" class="max-w-full rounded-lg shadow-md" />
+            </div>
+            <% } else { %>
+            <div class="text-white break-words max-w-full">
+              <span class="encrypted-message" data-encrypted-content="<%= message.content %>">Loading...</span>
+            </div>
+            <% } %>
           </div>
         </div>
         <% }) %>
@@ -201,6 +224,7 @@
  
       const CDN_BASE_URL = '<%= process.env.CDN_BASE_URL %>';
       const CDN_UPLOAD_PATH = '<%= process.env.CDN_UPLOAD_PATH %>';
+      const CDN_UPDATE_JSON_PATH = '/update-json';
       const AUTH_TOKEN = '<%= process.env.CDN_AUTH_TOKEN %>';
 
 
@@ -208,22 +232,31 @@
         window.scrollTo(0, document.body.scrollHeight);
       }
 
-      function decryptExistingMessages() {
+      function decryptSingleMessage(span) {
         const secretKey = '<%= process.env.CRYPTO_SECRET_KEY %>';
-
-        document.querySelectorAll('.encrypted-message').forEach(span => {
-          const encryptedContent = span.dataset.encryptedContent;
-          if (encryptedContent) {
-            try {
-              let decryptedContent = CryptoJS.AES.decrypt(encryptedContent, secretKey).toString(CryptoJS.enc.Utf8);
-              decryptedContent = replaceEmojis(decryptedContent);
-              span.innerHTML = decryptedContent;
-            } catch (error) {
-              console.error('Decryption error for existing message:', error);
-              span.textContent = 'Failed to decrypt message';
+        console.log('Attempting decryption for span:', span);
+        console.log('Secret Key length:', secretKey.length);
+        const encryptedContent = span.dataset.encryptedContent;
+        if (encryptedContent) {
+          try {
+            const bytes = CryptoJS.AES.decrypt(encryptedContent, secretKey);
+            if (bytes.sigBytes <= 0) {
+              console.error('Decryption failed: Resulting bytes are empty. Check if CRYPTO_SECRET_KEY is correct.');
+              span.textContent = 'Failed to decrypt message (Invalid Key/Content)';
+              return;
             }
+            let decryptedContent = bytes.toString(CryptoJS.enc.Utf8);
+            decryptedContent = replaceEmojis(decryptedContent);
+            span.innerHTML = decryptedContent;
+          } catch (error) {
+            console.error('Decryption error for message:', error);
+            span.textContent = 'Failed to decrypt message (Exception)';
           }
-        });
+        }
+      }
+
+      function decryptExistingMessages() {
+        document.querySelectorAll('.encrypted-message').forEach(decryptSingleMessage);
       }
 
       const checkCryptoJSInterval = setInterval(() => {
@@ -241,39 +274,114 @@
 
 function displayMessage(msg) {
         const isCurrentUser = msg.senderId === '<%= user.id %>';
+        const messageTimestamp = new Date(msg.timestamp);
+
+        const lastMessageElement = messagesDiv.lastElementChild;
+        let shouldGroup = false;
+
+        if (lastMessageElement) {
+          const lastSenderId = lastMessageElement.dataset.senderId;
+          const lastTimestampStr = lastMessageElement.dataset.timestamp;
+          
+          if (lastSenderId && lastTimestampStr) {
+            const lastTimestamp = new Date(lastTimestampStr);
+            
+            const sameSender = msg.senderId === lastSenderId;
+            
+            const sameMinute = messageTimestamp.getFullYear() === lastTimestamp.getFullYear() &&
+                             messageTimestamp.getMonth() === lastTimestamp.getMonth() &&
+                             messageTimestamp.getDate() === lastTimestamp.getDate() &&
+                             messageTimestamp.getHours() === lastTimestamp.getHours() &&
+                             messageTimestamp.getMinutes() === lastTimestamp.getMinutes();
+
+            shouldGroup = sameSender && sameMinute;
+          }
+        }
 
         const messageContainer = document.createElement('div');
-        messageContainer.classList.add('mb-2');
+        messageContainer.classList.add('mb-4');
+        
+        messageContainer.dataset.senderId = msg.senderId;
+        messageContainer.dataset.timestamp = msg.timestamp;
+
+        const groupingClass = shouldGroup ? 'mt-[-1.25rem]' : '';
+        
+        const profilePictureHtml = shouldGroup
+          ? '<div class="w-10 h-10 mr-4"></div>'
+          : `<img src="${isCurrentUser ? '<%= user.profilepicture %>' : '<%= targetUser.profilepicture %>'} " alt="${isCurrentUser ? '<%= user.username %>' : '<%= targetUser.username %>'} Profile"
+              class="w-10 h-10 rounded-full mr-4 mt-1">`;
+
+        const headerHtml = shouldGroup
+          ? ''
+          : `<div class="message-header flex items-baseline mb-1">
+                <span class="font-semibold text-white mr-2">${isCurrentUser ? '<%= user.username %>' : '<%= targetUser.username %>'}</span>
+                <span class="text-xs text-gray-400">${messageTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>`;
 
         messageContainer.innerHTML = `
-          <div class="flex items-start ${isCurrentUser ? 'flex-row-reverse' : ''}">
-            <img src="${isCurrentUser ? '<%= user.profilepicture %>' : '<%= targetUser.profilepicture %>'} " alt="${isCurrentUser ? '<%= user.username %>' : '<%= targetUser.username %>'} Profile"
-              class="w-8 h-8 rounded-full mr-3">
-            <div>
-              <div class="font-semibold ${isCurrentUser ? 'text-right' : 'text-left'}">${isCurrentUser ? '<%= user.username %>' : '<%= targetUser.username %>'}</div>
-              <div class="bg-${isCurrentUser ? 'blue-700' : 'gray-700'} text-white p-3 rounded-xl max-w-xs break-words shadow-md">
-                ${msg.type === 'image' ? `<img src="${msg.content}" alt="Image" class="max-w-xs rounded-xl shadow-md" />` : decryptMessage(msg.content)}
-                <div class="text-xs text-${isCurrentUser ? 'blue-200' : 'gray-400'} mt-1 text-${isCurrentUser ? 'right' : 'left'}">
-                  ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
+          <div class="message-item flex items-start hover:bg-gray-700/50 p-1 rounded-lg -mx-1 ${groupingClass}">
+            ${profilePictureHtml}
+            <div class="flex flex-col min-w-0">
+              ${headerHtml}
+              ${msg.type === 'image'
+                ? `<div class="max-w-full break-words"><img src="${msg.content}" alt="Image" class="max-w-full rounded-lg shadow-md" /></div>`
+                : `<div class="text-white break-words max-w-full"><span class="encrypted-message" data-encrypted-content="${msg.content}">Loading...</span></div>`
+              }
             </div>
           </div>
         `;
 console.log('Message content:', msg.content);
         messagesDiv.appendChild(messageContainer);
+        
+        if (msg.type === 'text') {
+          const newSpan = messageContainer.querySelector('.encrypted-message');
+          if (newSpan) {
+            decryptSingleMessage(newSpan);
+          }
+        }
+        
         scrollToBottom();
       }
 
-function decryptMessage(encryptedContent) {
+
+function encryptMessage(content) {
   const secretKey = '<%= process.env.CRYPTO_SECRET_KEY %>';
   try {
-    let decryptedContent = CryptoJS.AES.decrypt(encryptedContent, secretKey).toString(CryptoJS.enc.Utf8);
-    decryptedContent = replaceEmojis(decryptedContent);
-    return decryptedContent;
+    return CryptoJS.AES.encrypt(content, secretKey).toString();
   } catch (error) {
-    console.error('Decryption error:', error);
-    return encryptedContent;
+    console.error('Encryption error:', error);
+    return content;
+  }
+}
+
+async function saveMessageToCDN(messageData) {
+  const payload = {
+    folder: 'others',
+    filename: `${dmRoomId}.json`,
+    data: messageData
+  };
+
+  try {
+    const response = await fetch(CDN_BASE_URL + CDN_UPDATE_JSON_PATH, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': AUTH_TOKEN,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('CDN Save Message Failed:', response.status, response.statusText, errorText);
+      throw new Error(`CDN Save Message Failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('CDN Save Message Response:', data);
+  } catch (error) {
+    console.error('Error saving message to CDN:', error);
+    alert('Failed to save message history. Check console for details.');
   }
 }
 
@@ -352,9 +460,10 @@ function decryptMessage(encryptedContent) {
 
       messageForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const messageContent = messageInput.value.trim();
+        const rawMessageContent = messageInput.value.trim();
+        const timestamp = new Date().toISOString();
 
-        if (!messageContent && !currentImageFile) return;
+        if (!rawMessageContent && !currentImageFile) return;
 
         let imageUrl = null;
 
@@ -363,18 +472,17 @@ function decryptMessage(encryptedContent) {
         }
 
         if (imageUrl) {
-          console.log('Emitting image message:', {
+          const imageMessage = {
             senderId: '<%= user.id %>',
             receiverId: '<%= targetUser.id %>',
             type: 'image',
-            content: imageUrl
-          });
-          socket.emit('chat message', {
-            senderId: '<%= user.id %>',
-            receiverId: '<%= targetUser.id %>',
-            type: 'image',
-            content: imageUrl
-          });
+            content: imageUrl,
+            timestamp: timestamp
+          };
+          console.log('Emitting image message:', imageMessage);
+          socket.emit('chat message', imageMessage);
+          await saveMessageToCDN(imageMessage);
+
           imagePreview.innerHTML = '';
           fileInput.value = '';
           currentImageFile = null;
@@ -384,13 +492,19 @@ function decryptMessage(encryptedContent) {
           alert('Image upload failed, cannot send image message.');
         }
 
-        if (messageContent) {
-          socket.emit('chat message', {
+        if (rawMessageContent) {
+          const encryptedContent = encryptMessage(rawMessageContent);
+          const textMessage = {
             senderId: '<%= user.id %>',
             receiverId: '<%= targetUser.id %>',
             type: 'text',
-            content: messageContent
-          });
+            content: encryptedContent,
+            timestamp: timestamp
+          };
+          console.log('Emitting text message:', textMessage);
+          socket.emit('chat message', textMessage);
+          await saveMessageToCDN(textMessage);
+
           messageInput.value = '';
           scrollToBottom();
         }
@@ -797,3 +911,4 @@ function decryptMessage(encryptedContent) {
 </body>
 
 </html>
+
