@@ -189,6 +189,140 @@
 
   <%- include('parts/gc-create', { user: user }) %>
 
+<script>
+  let currentGroupId = null;
+
+  window.openGroupChatModal = function(groupId = null) {
+    currentGroupId = groupId;
+
+    const modal = document.getElementById('createGroupChatModal');
+    const form = document.getElementById('createGroupChatForm');
+    const modalTitle = document.getElementById('groupChatModalTitle');
+    const groupNameDiv = document.getElementById('groupNameDiv');
+    const groupNameInput = document.getElementById('groupName');
+    const submitButton = document.getElementById('groupChatSubmitButton');
+
+    if (!modal) { console.error('Group Chat Modal element "createGroupChatModal" not found.'); return; }
+    if (!form) { console.error('Group Chat Modal element "createGroupChatForm" not found.'); return; }
+    if (!modalTitle) { console.error('Group Chat Modal element "groupChatModalTitle" not found.'); return; }
+    if (!groupNameDiv) { console.error('Group Chat Modal element "groupNameDiv" not found.'); return; }
+    if (!groupNameInput) { console.error('Group Chat Modal element "groupName" not found.'); return; }
+    if (!submitButton) { console.error('Group Chat Modal element "groupChatSubmitButton" not found.'); return; }
+
+    form.reset();
+    document.querySelectorAll('input[name="participants"]').forEach(cb => cb.checked = false);
+
+    if (currentGroupId) {
+      
+      modalTitle.textContent = 'Add Members';
+      groupNameDiv.classList.add('hidden');
+      groupNameInput.removeAttribute('required');
+      submitButton.textContent = 'Add Members';
+
+    } else {
+      
+      modalTitle.textContent = 'Create Group Chat';
+      groupNameDiv.classList.remove('hidden');
+      groupNameInput.setAttribute('required', 'required');
+      submitButton.textContent = 'Create Group Chat';
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  window.openCreateGroupChatModal = function() {
+    window.openGroupChatModal(null);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('createGroupChatModal');
+    const closeButton = document.getElementById('closeGroupChatModal');
+    const form = document.getElementById('createGroupChatForm');
+
+    if (!modal || !closeButton || !form) {
+      console.warn('Group Chat Modal elements not found. Skipping JS initialization.');
+      return;
+    }
+
+    closeButton.addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.add('hidden');
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const checkboxes = document.querySelectorAll('input[name="participants"]:checked');
+      const participants = Array.from(checkboxes).map(cb => cb.value);
+
+      if (participants.length === 0) {
+        alert('Please select at least one friend.');
+        return;
+      }
+
+      let url;
+      let payload;
+      let successMessage;
+      let failureMessage;
+
+      if (currentGroupId) {
+        
+        url = `/dashboard/gc/${currentGroupId}/add-members`;
+        payload = { participants };
+        successMessage = 'Members added successfully!';
+        failureMessage = 'Failed to add members:';
+      } else {
+        
+        const groupName = document.getElementById('groupName').value.trim();
+        if (!groupName) {
+          alert('Please enter a group name.');
+          return;
+        }
+        url = '/dashboard/create-group-chat';
+        payload = { groupName, participants };
+        successMessage = `Group chat "${groupName}" created successfully!`;
+        failureMessage = 'Failed to create group chat:';
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert(successMessage);
+          modal.classList.add('hidden');
+          
+          if (currentGroupId) {
+            
+            location.reload();
+          } else if (result.groupId) {
+            
+            window.location.href = `/gc/${result.groupId}`;
+          } else {
+            location.reload();
+          }
+        } else {
+          alert(`${failureMessage} ${result.message || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        alert('An error occurred while trying to process the request.');
+      }
+    });
+  });
+</script>
 </body>
 
 </html>

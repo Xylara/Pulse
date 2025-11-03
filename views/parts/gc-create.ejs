@@ -1,138 +1,15 @@
-<script>
-  let currentGroupId = null;
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('createGroupChatModal');
-    const closeButton = document.getElementById('closeGroupChatModal');
-    const form = document.getElementById('createGroupChatForm');
-    const modalTitle = document.getElementById('groupChatModalTitle');
-    const groupNameDiv = document.getElementById('groupNameDiv');
-    const groupNameInput = document.getElementById('groupName');
-    const submitButton = document.getElementById('groupChatSubmitButton');
-
-    if (!modal || !closeButton || !form || !modalTitle || !groupNameDiv || !submitButton || !groupNameInput) {
-      console.warn('Group Chat Modal elements not found. Skipping JS initialization.');
-      return;
-    }
-
-    window.openGroupChatModal = function(groupId = null) {
-      currentGroupId = groupId;
-
-      form.reset();
-      document.querySelectorAll('input[name="participants"]').forEach(cb => cb.checked = false);
-
-      if (currentGroupId) {
-        
-        modalTitle.textContent = 'Add Members';
-        groupNameDiv.classList.add('hidden');
-        groupNameInput.removeAttribute('required');
-        submitButton.textContent = 'Add Members';
-
-      } else {
-        
-        modalTitle.textContent = 'Create Group Chat';
-        groupNameDiv.classList.remove('hidden');
-        groupNameInput.setAttribute('required', 'required');
-        submitButton.textContent = 'Create Group Chat';
-      }
-
-      modal.classList.remove('hidden');
-    }
-
-    window.openCreateGroupChatModal = function() {
-      window.openGroupChatModal(null);
-    }
-
-    closeButton.addEventListener('click', () => {
-      modal.classList.add('hidden');
-    });
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.add('hidden');
-      }
-    });
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const checkboxes = document.querySelectorAll('input[name="participants"]:checked');
-      const participants = Array.from(checkboxes).map(cb => cb.value);
-
-      if (participants.length === 0) {
-        alert('Please select at least one friend.');
-        return;
-      }
-
-      let url;
-      let payload;
-      let successMessage;
-      let failureMessage;
-
-      if (currentGroupId) {
-        
-        url = `/dashboard/gc/${currentGroupId}/add-members`;
-        payload = { participants };
-        successMessage = 'Members added successfully!';
-        failureMessage = 'Failed to add members:';
-      } else {
-        
-        const groupName = document.getElementById('groupName').value.trim();
-        if (!groupName) {
-          alert('Please enter a group name.');
-          return;
-        }
-        url = '/dashboard/create-group-chat';
-        payload = { groupName, participants };
-        successMessage = `Group chat "${groupName}" created successfully!`;
-        failureMessage = 'Failed to create group chat:';
-      }
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-          alert(successMessage);
-          modal.classList.add('hidden');
-          
-          if (currentGroupId) {
-            
-            location.reload();
-          } else if (result.groupId) {
-            
-            window.location.href = `/gc/${result.groupId}`;
-          } else {
-            location.reload();
-          }
-        } else {
-          alert(`${failureMessage} ${result.message || 'Unknown error'}`);
-        }
-      } catch (error) {
-        console.error('Error submitting form:', error);
-        alert('An error occurred while trying to process the request.');
-      }
-    });
-  });
-</script>
-
-<!-- Create Group Chat Modal -->
 <div id="createGroupChatModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
   <div class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md">
     <div class="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
       <h3 id="groupChatModalTitle" class="text-xl font-semibold text-white">Create Group Chat</h3>
       <button id="closeGroupChatModal" class="text-gray-400 hover:text-white">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http:
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
       </button>
     </div>
     <form id="createGroupChatForm">
+      <input type="hidden" id="gcId" name="gcId" value="">
       <div id="groupNameDiv" class="mb-4">
         <label for="groupName" class="block text-sm font-medium text-gray-300 mb-1">Group Name</label>
         <input type="text" id="groupName" name="groupName" required

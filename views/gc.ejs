@@ -237,6 +237,24 @@
       document.getElementById('gcPictureInput').value = '';
       document.getElementById('gcPicturePreview').innerHTML = '';
     }
+    function openGroupChatModal(groupId) {
+      document.getElementById('groupChatModalTitle').textContent = 'Add Members';
+      document.getElementById('groupNameDiv').classList.add('hidden');
+      document.getElementById('gcId').value = groupId;
+      document.getElementById('groupChatSubmitButton').textContent = 'Add Members';
+      document.getElementById('createGroupChatForm').dataset.mode = 'add-members';
+      document.getElementById('createGroupChatModal').classList.remove('hidden');
+    }
+
+    function closeGroupChatModal() {
+      document.getElementById('groupChatModalTitle').textContent = 'Create Group Chat';
+      document.getElementById('groupNameDiv').classList.remove('hidden');
+      document.getElementById('gcId').value = '';
+      document.getElementById('groupChatSubmitButton').textContent = 'Create Group Chat';
+      document.getElementById('createGroupChatForm').dataset.mode = 'create';
+      document.getElementById('createGroupChatModal').classList.add('hidden');
+      document.getElementById('createGroupChatForm').reset();
+    }
 
     async function leaveGroupChat(groupId) {
       if (!confirm('Are you sure you want to leave this group chat?')) {
@@ -326,6 +344,53 @@
       const AUTH_TOKEN = '<%= process.env.CDN_AUTH_TOKEN %>';
 
 
+      const createGroupChatModal = document.getElementById('createGroupChatModal');
+      const closeGroupChatModalButton = document.getElementById('closeGroupChatModal');
+      const createGroupChatForm = document.getElementById('createGroupChatForm');
+      const gcIdInput = document.getElementById('gcId');
+
+      closeGroupChatModalButton.addEventListener('click', closeGroupChatModal);
+      
+      createGroupChatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const mode = createGroupChatForm.dataset.mode || 'create';
+        
+        if (mode === 'add-members') {
+          const groupId = gcIdInput.value;
+          const selectedFriends = Array.from(createGroupChatForm.elements.participants)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+
+          if (selectedFriends.length === 0) {
+            alert('Please select at least one friend to add.');
+            return;
+          }
+
+          try {
+            const response = await fetch(`/dashboard/gc/add-members/${groupId}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ usernames: selectedFriends }),
+            });
+
+            if (response.ok) {
+              alert('Members added successfully! Reloading page...');
+              closeGroupChatModal();
+              window.location.reload();
+            } else {
+              const error = await response.json();
+              alert(`Failed to add members: ${error.message || response.statusText}`);
+            }
+          } catch (error) {
+            console.error('Error adding members:', error);
+            alert('An unexpected error occurred while trying to add members.');
+          }
+        } else {
+          alert('Group chat creation is not supported from this view.');
+        }
+      });
       function scrollToBottom() {
         window.scrollTo(0, document.body.scrollHeight);
       }
