@@ -46,8 +46,26 @@
   </style>
   <style>
     .speaking-indicator {
-      border: 2px solid #4CAF50; 
+      border: 2px solid #4CAF50;
       box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+    }
+  </style>
+  <style>
+    .emoji-suggestions-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .emoji-suggestions-scrollbar::-webkit-scrollbar-track {
+      background: #2d3748;
+    }
+
+    .emoji-suggestions-scrollbar::-webkit-scrollbar-thumb {
+      background: #4a5568;
+      border-radius: 4px;
+    }
+
+    .emoji-suggestions-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #718096;
     }
   </style>
 </head>
@@ -146,11 +164,13 @@
 
     <div class="bg-gray-900 border-t border-gray-700 p-4">
       <form id="messageForm" class="flex items-center gap-4">
-        <input type="text" id="messageInput" placeholder="Type your message..."
-          class="flex-grow p-3 rounded-full bg-gray-800 text-white focus:bg-gray-700 outline-none transition"
-          autocomplete="off" />
-        <div id="emojiSuggestions"
-          class="absolute bottom-full left-0 mb-2 w-full bg-gray-800 rounded-lg shadow-lg p-2 hidden z-20 max-h-48 overflow-y-auto">
+        <div class="relative flex-grow">
+          <input type="text" id="messageInput" placeholder="Type your message..."
+            class="w-full p-3 rounded-full bg-gray-800 text-white focus:bg-gray-700 outline-none transition"
+            autocomplete="off" />
+          <div id="emojiSuggestions"
+            class="absolute bottom-full left-0 mb-2 w-full bg-gray-800 rounded-lg shadow-lg p-2 hidden z-20 max-h-48 overflow-y-auto emoji-suggestions-scrollbar">
+          </div>
         </div>
         <input type="file" id="fileInput" class="hidden" accept="image/*, image/gif" />
         <div class="relative">
@@ -196,6 +216,10 @@
         'very-happy-troll': '/others/emojis/very-happy-troll.png'
       };
 
+      function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
+
       function replaceEmojis(text) {
         let replacedText = text;
         let isOnlyEmoji = true;
@@ -203,7 +227,8 @@
 
         let tempText = text;
         for (const emojiName in customEmojis) {
-          const regex = new RegExp(`:${emojiName}:`, 'g');
+          const escapedEmojiName = escapeRegExp(emojiName);
+          const regex = new RegExp(`:${escapedEmojiName}:`, 'g');
           if (tempText.match(regex)) {
             emojiCount += (tempText.match(regex) || []).length;
             tempText = tempText.replace(regex, '');
@@ -215,7 +240,8 @@
         }
 
         for (const emojiName in customEmojis) {
-          const regex = new RegExp(`:${emojiName}:`, 'g');
+          const escapedEmojiName = escapeRegExp(emojiName);
+          const regex = new RegExp(`:${escapedEmojiName}:`, 'g');
           const emojiClass = isOnlyEmoji ? 'inline-block w-16 h-16 align-middle' : 'inline-block w-5 h-5 align-text-bottom';
           replacedText = replacedText.replace(regex, `<img src="${customEmojis[emojiName]}" alt="${emojiName}" class="${emojiClass}" />`);
         }
@@ -512,7 +538,8 @@ async function saveMessageToCDN(messageData) {
         const colonIndex = text.lastIndexOf(':');
 
         if (colonIndex > -1 && (colonIndex === 0 || text[colonIndex - 1] === ' ' || text[colonIndex - 1] === '\n')) {
-          const searchTerm = text.substring(colonIndex + 1).toLowerCase();
+          const rawSearchTerm = text.substring(colonIndex + 1);
+          const searchTerm = rawSearchTerm.trim().toLowerCase();
           const matchingEmojis = Object.keys(customEmojis).filter(emojiName =>
             emojiName.toLowerCase().startsWith(searchTerm)
           );

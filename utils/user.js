@@ -50,21 +50,20 @@ const writeUsers = async (users) => {
 
 const updateUserField = async (userId, fieldName, fieldValue) => {
   try {
-    const payload = {
-      folder: CDN_USERS_FOLDER,
-      filename: CDN_USERS_FILENAME,
-      id: userId,
-      [fieldName]: fieldValue
-    };
-    await axios.post(`${CDN_BASE_URL}/update-json`, payload, {
-      headers: {
-        'Authorization': CDN_AUTH_TOKEN,
-        'Content-Type': 'application/json'
-      }
-    });
-    console.log(`User ${userId}'s ${fieldName} updated on CDN.`);
+    let users = await readUsers();
+    
+    const userIndex = users.findIndex(u => u.id === userId);
+
+    if (userIndex !== -1) {
+      users[userIndex][fieldName] = fieldValue;
+      
+      await writeUsers(users);
+      console.log(`User ${userId}'s ${fieldName} updated locally and written to CDN.`);
+    } else {
+      console.warn(`User ${userId} not found for update.`);
+    }
   } catch (error) {
-    console.error(`Error updating user ${userId}'s ${fieldName} on CDN:`, error.message);
+    console.error(`Error updating user ${userId}'s ${fieldName}:`, error.message);
     throw error;
   }
 };
