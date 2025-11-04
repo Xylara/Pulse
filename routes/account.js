@@ -3,6 +3,10 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const { readUsers, writeUsers, updateUserField } = require('../utils/user');
 
+function sanitizeUsername(username) {
+  return username.replace(/</g, '<').replace(/>/g, '>');
+}
+
 router.get('/account', async (req, res) => {
   const loggedInUser = req.session.user;
 
@@ -30,8 +34,10 @@ router.get('/account', async (req, res) => {
 });
 
 router.post('/account/username', async (req, res) => {
-  const { username } = req.body;
+  let { username } = req.body;
   const loggedInUser = req.session.user;
+
+  username = sanitizeUsername(username);
 
   if (!loggedInUser) {
     return res.redirect('/login');

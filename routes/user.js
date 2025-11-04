@@ -4,6 +4,10 @@ const bcrypt = require('bcrypt');
 const { readUsers, writeUsers } = require('../utils/user');
 const authGuestMiddleware = require('../middleware/auth-guest');
 
+function sanitizeUsername(username) {
+  return username.replace(/</g, '<').replace(/>/g, '>');
+}
+
 router.get('/', authGuestMiddleware, (req, res) => {
   res.render('home');
 });
@@ -18,7 +22,9 @@ router.get('/register', authGuestMiddleware, (req, res) => {
 
 router.post('/register', async (req, res) => {
   try {
-    const { email, username, password, repeatPassword } = req.body;
+    let { email, username, password, repeatPassword } = req.body;
+
+    username = sanitizeUsername(username);
 
     if (!email || !username || !password || !repeatPassword) {
       return res.status(400).render('register', { error: 'All fields are required' });
