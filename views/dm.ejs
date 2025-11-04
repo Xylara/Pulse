@@ -220,6 +220,17 @@
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       }
 
+      function escapeHtml(text) {
+        const map = {
+          '&': '&',
+          '<': '<',
+          '>': '>',
+          '"': '"',
+          "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, (m) => map[m]);
+      }
+
       function replaceEmojis(text) {
         let replacedText = text;
         let isOnlyEmoji = true;
@@ -270,8 +281,9 @@
               return;
             }
             let decryptedContent = bytes.toString(CryptoJS.enc.Utf8);
-            decryptedContent = replaceEmojis(decryptedContent);
-            span.innerHTML = decryptedContent;
+            let escapedContent = escapeHtml(decryptedContent);
+            let finalContent = replaceEmojis(escapedContent);
+            span.innerHTML = finalContent;
           } catch (error) {
             console.error('Decryption error for message:', error);
             span.textContent = 'Failed to decrypt message (Exception)';
@@ -852,8 +864,8 @@ async function saveMessageToCDN(messageData) {
           const participantElement = document.createElement('div');
           participantElement.classList.add('flex', 'items-center', 'space-x-1');
           participantElement.innerHTML = `
-            <img id="participant-${p.id}" src="${p.profilepicture}" alt="${p.username} Profile" class="w-6 h-6 rounded-full">
-            <span class="text-sm">${p.username}</span>
+            <img id="participant-${p.id}" src="${p.profilepicture}" alt="${escapeHtml(p.username)} Profile" class="w-6 h-6 rounded-full">
+            <span class="text-sm">${escapeHtml(p.username)}</span>
           `;
           callParticipantsDiv.appendChild(participantElement);
           if (p.id === currentUserId && localStream) {
