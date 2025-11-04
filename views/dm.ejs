@@ -283,7 +283,7 @@
             let decryptedContent = bytes.toString(CryptoJS.enc.Utf8);
             let escapedContent = escapeHtml(decryptedContent);
             let finalContent = replaceEmojis(escapedContent);
-            span.innerHTML = finalContent;
+            span.innerText = finalContent;
           } catch (error) {
             console.error('Decryption error for message:', error);
             span.textContent = 'Failed to decrypt message (Exception)';
