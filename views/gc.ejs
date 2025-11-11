@@ -12,20 +12,19 @@
   <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
   <style>
     .message-area::-webkit-scrollbar {
-      width: 8px;
+      width: 4px;
     }
 
     .message-area::-webkit-scrollbar-track {
-      background: #2d3748;
+      background: #1e1e1e;
     }
 
     .message-area::-webkit-scrollbar-thumb {
-      background: #4a5568;
-      border-radius: 4px;
+      background: #7289da;
     }
 
     .message-area::-webkit-scrollbar-thumb:hover {
-      background: #718096;
+      background: #6372e9;
     }
 
     body::-webkit-scrollbar {
@@ -52,31 +51,30 @@
   </style>
   <style>
     .emoji-suggestions-scrollbar::-webkit-scrollbar {
-      width: 8px;
+      width: 4px;
     }
 
     .emoji-suggestions-scrollbar::-webkit-scrollbar-track {
-      background: #2d3748;
+      background: #1e1e1e;
     }
 
     .emoji-suggestions-scrollbar::-webkit-scrollbar-thumb {
-      background: #4a5568;
-      border-radius: 4px;
+      background: #7289da;
     }
 
     .emoji-suggestions-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #718096;
+      background: #6372e9;
     }
   </style>
 </head>
 
 <body
-  class="bg-gray-800 font-sans text-white antialiased min-h-screen flex">
+  class="bg-gray-800 font-sans text-white antialiased h-screen flex overflow-hidden">
 
   <div
     class="flex flex-col flex-1 {{ 'ml-14 transition-all duration-200 hover:ml-40' if sidebar was present }}">
-    <div class="sticky top-0 z-20">
-      <header class="bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between shadow-md sticky top-0 z-20">
+    <div>
+      <header class="bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between shadow-md">
         <div class="flex items-center">
           <a href="/dashboard" class="mr-3">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -114,7 +112,7 @@
         </div>
       </header>
 
-      <div id="callInteractionWrapper" class="sticky top-20 z-10">
+      <div id="callInteractionWrapper">
         <div id="callActions" class="bg-gray-900 border-b border-gray-700 p-2 text-center text-sm">
           <button id="startCallButton" class="bg-blue-700 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full mr-2">Start Call</button>
           <button id="joinCallButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full hidden">Join Call</button>
@@ -131,7 +129,7 @@
       </div>
 
 
-    <main class="flex-1 p-4 overflow-y-auto message-area">
+    <main class="flex-1 min-h-0 p-4 pb-20 overflow-y-auto message-area">
       <div id="messages" class="space-y-2">
         <%
           function findUserById(userId, users) {
@@ -162,26 +160,27 @@
             shouldGroup = sameSender && sameMinute;
           }
         %>
-        <div class="message-item flex items-start hover:bg-gray-700/50 p-1 rounded-lg -mx-1 <%= shouldGroup ? '-mt-3' : '' %>" data-sender-id="<%= message.senderId %>" data-timestamp="<%= message.timestamp %>">
+        <% const isCurrentUser = message.senderId === user.id; %>
+        <div class="message-item flex justify-start <%= shouldGroup ? '-mt-1' : 'mt-4' %>" data-sender-id="<%= message.senderId %>" data-timestamp="<%= message.timestamp %>">
           <% if (!shouldGroup && sender) { %>
           <img src="<%= sender.profilepicture %>" alt="<%= sender.username %> Profile"
-            class="w-10 h-10 rounded-full mr-4 mt-1">
+            class="w-10 h-10 rounded-full mr-3 mt-1">
           <% } else { %>
-          <div class="w-10 h-10 mr-4"></div>
+          <div class="w-10 h-10 mr-3"></div>
           <% } %>
-          <div class="flex flex-col min-w-0">
+          <div class="flex flex-col max-w-3/4 min-w-0 items-start">
             <% if (!shouldGroup && sender) { %>
-            <div class="message-header flex items-baseline mb-1">
+            <div class="message-header flex items-baseline mb-1 justify-start">
               <span class="font-semibold text-white mr-2"><%= sender.username %></span>
               <span class="text-xs text-gray-400"><%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %></span>
             </div>
             <% } %>
             <% if (message.type === 'image') { %>
             <div class="max-w-full break-words">
-              <img src="<%= message.content %>" alt="Image" class="max-w-full rounded-lg shadow-md" />
+              <img src="<%= message.content %>" alt="Image" class="max-w-full rounded-xl shadow-md cursor-pointer" onclick="window.open(this.src)">
             </div>
             <% } else { %>
-            <div class="text-white break-words max-w-full">
+            <div class="text-white break-words max-w-full p-3 rounded-xl shadow-md bg-gray-700">
               <span class="encrypted-message" data-encrypted-content="<%= message.content %>">Loading...</span>
             </div>
             <% } %>
@@ -191,7 +190,7 @@
       </div>
     </main>
 
-    <div class="bg-gray-900 border-t border-gray-700 p-4">
+    <div class="fixed bottom-0 left-0 right-0 z-30 bg-gray-900 border-t border-gray-700 p-4 {{ 'left-14' if sidebar was present }}">
       <form id="messageForm" class="flex items-center gap-4">
         <div class="relative flex-grow">
           <input type="text" id="messageInput" placeholder="Type your message..."
@@ -223,11 +222,10 @@
   </div>
 
 <script>
-    window.onload = function() {
-      window.scrollTo(0,document.body.scrollHeight);
-    };
-
     function openChangeGcPictureModal(groupId) {
+      const messageArea = document.querySelector('.message-area');
+      // Scroll to bottom on load
+      messageArea.scrollTop = messageArea.scrollHeight;
       document.getElementById('gcIdPictureChange').value = groupId;
       document.getElementById('changeGcPictureModal').classList.remove('hidden');
     }
@@ -403,7 +401,8 @@
         }
       });
       function scrollToBottom() {
-        window.scrollTo(0, document.body.scrollHeight);
+        const messageArea = document.querySelector('.message-area');
+        messageArea.scrollTop = messageArea.scrollHeight;
       }
 
       function decryptSingleMessage(span) {
@@ -477,35 +476,38 @@ function displayMessage(msg) {
         }
 
         const messageContainer = document.createElement('div');
-        messageContainer.classList.add('message-item', 'flex', 'items-start', 'hover:bg-gray-700/50', 'p-1', 'rounded-lg', '-mx-1');
-        if (shouldGroup) {
-          messageContainer.classList.add('mt-[-2]');
-        }
+        messageContainer.classList.add('message-item', 'flex', isCurrentUser ? 'justify-end' : 'justify-start');
+        messageContainer.classList.add(shouldGroup ? '-mt-1' : 'mt-4');
         
         messageContainer.dataset.senderId = msg.senderId;
         messageContainer.dataset.timestamp = msg.timestamp;
+
+        const profilePicture = sender ? sender.profilepicture : '<%= process.env.DEFAULT_PROFILE_PICTURE %>';
+        const username = sender ? sender.username : 'Unknown User';
         
         const profilePictureHtml = shouldGroup
-          ? '<div class="w-10 h-10 mr-4"></div>'
-          : `<img src="${sender ? sender.profilepicture : '<%= process.env.DEFAULT_PROFILE_PICTURE %>'} " alt="${sender ? sender.username : 'Unknown User'} Profile"
-              class="w-10 h-10 rounded-full mr-4 mt-1">`;
+          ? `<div class="w-10 h-10 ${isCurrentUser ? 'ml-3' : 'mr-3'}"></div>`
+          : `<img src="${isCurrentUser ? '<%= user.profilepicture %>' : profilePicture}" alt="${username} Profile"
+              class="w-10 h-10 rounded-full ${isCurrentUser ? 'ml-3' : 'mr-3'} mt-1">`;
 
         const headerHtml = shouldGroup
           ? ''
-          : `<div class="message-header flex items-baseline mb-1">
-                <span class="font-semibold text-white mr-2">${sender ? sender.username : 'Unknown User'}</span>
+          : `<div class="message-header flex items-baseline mb-1 ${isCurrentUser ? 'justify-end' : 'justify-start'}">
+                <span class="font-semibold text-white ${isCurrentUser ? 'ml-2' : 'mr-2'}">${username}</span>
                 <span class="text-xs text-gray-400">${messageTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>`;
 
+        const messageContentHtml = msg.type === 'image'
+          ? `<div class="max-w-full break-words"><img src="${msg.content}" alt="Image" class="max-w-full rounded-xl shadow-md cursor-pointer" onclick="window.open(this.src)" /></div>`
+          : `<div class="text-white break-words max-w-full p-3 rounded-xl shadow-md ${isCurrentUser ? 'bg-blue-700 rounded-tr-none' : 'bg-gray-700 rounded-tl-none'}"><span class="encrypted-message" data-encrypted-content="${msg.content}">Loading...</span></div>`;
+
         messageContainer.innerHTML = `
-            ${profilePictureHtml}
-            <div class="flex flex-col min-w-0">
+            ${isCurrentUser ? '' : profilePictureHtml}
+            <div class="flex flex-col max-w-3/4 min-w-0 ${isCurrentUser ? 'items-end' : 'items-start'}">
               ${headerHtml}
-              ${msg.type === 'image'
-                ? `<div class="max-w-full break-words"><img src="${msg.content}" alt="Image" class="max-w-full rounded-lg shadow-md" /></div>`
-                : `<div class="text-white break-words max-w-full"><span class="encrypted-message" data-encrypted-content="${msg.content}">Loading...</span></div>`
-              }
+              ${messageContentHtml}
             </div>
+            ${isCurrentUser ? profilePictureHtml : ''}
         `;
         messagesDiv.appendChild(messageContainer);
         

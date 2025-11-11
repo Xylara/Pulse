@@ -57,26 +57,37 @@
   </div>
 
   <style>
-    .sidebar::-webkit-scrollbar {
-      width: 0px;
-      transition: width 0.2s ease-in-out;
+    body::-webkit-scrollbar {
+      width: 4px;
     }
 
-    .sidebar:hover::-webkit-scrollbar {
-      width: 8px;
+    body::-webkit-scrollbar-track {
+      background: #1e1e1e;
+    }
+
+    body::-webkit-scrollbar-thumb {
+      background: #7289da;
+    }
+
+    body::-webkit-scrollbar-thumb:hover {
+      background: #6372e9;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 4px;
     }
 
     .sidebar::-webkit-scrollbar-track {
-      background: #2d3748;
+      background: #1e1e1e;
     }
 
     .sidebar::-webkit-scrollbar-thumb {
-      background: #4a5568;
+      background: #7289da;
       border-radius: 4px;
     }
 
     .sidebar::-webkit-scrollbar-thumb:hover {
-      background: #718096;
+      background: #6372e9;
     }
   </style>
 
