@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const express = require('express');
 const createAuthRouter = require('./modules/auth');
 const { startCli } = require('./modules/cli');
+const session = require('express-session');
 
 const app = express();
 const port = 3000;
@@ -28,9 +29,36 @@ app.set('view engine', 'ejs');
 
 app.use(express.urlencoded({ extended: true }));
 
+// Configure session middleware
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'a_very_insecure_default_secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }
+}));
+
+// Middleware to check if user is authenticated
+function isAuthenticated(req, res, next) {
+    if (req.session.userId) {
+        return next();
+    }
+    res.redirect('/');
+}
+
 app.use('/', createAuthRouter(pool, bcrypt, saltRounds));
 
-app.get('/dashboard', (req, res) => {
+// Add logout route
+app.get('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error('Logout error:', err);
+        }
+        res.redirect('/');
+    });
+});
+
+// Protect the dashboard route
+app.get('/dashboard', isAuthenticated, (req, res) => {
     res.send('damn');
 });
 

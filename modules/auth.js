@@ -58,6 +58,7 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
             const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
             if (passwordMatch) {
+                req.session.userId = user.id; // Set session on successful login
                 res.redirect('/dashboard');
             } else {
                 res.render('login', { error: 'Invalid username or password.' });
