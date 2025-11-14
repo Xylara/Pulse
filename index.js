@@ -29,15 +29,13 @@ app.set('view engine', 'ejs');
 
 app.use(express.urlencoded({ extended: true }));
 
-// Configure session middleware
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'a_very_insecure_default_secret',
+    secret: process.env.SESSION_SECRET || 'pulse',
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false }
 }));
 
-// Middleware to check if user is authenticated
 function isAuthenticated(req, res, next) {
     if (req.session.userId) {
         return next();
@@ -47,7 +45,6 @@ function isAuthenticated(req, res, next) {
 
 app.use('/', createAuthRouter(pool, bcrypt, saltRounds));
 
-// Add logout route
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -57,9 +54,8 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// Protect the dashboard route
 app.get('/dashboard', isAuthenticated, (req, res) => {
-    res.send('damn');
+    res.render('dashboard');
 });
 
 app.listen(port, () => {

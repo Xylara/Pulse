@@ -4,6 +4,9 @@ const router = express.Router();
 function createAuthRouter(pool, bcrypt, saltRounds) {
 
     router.get('/', (req, res) => {
+        if (req.session.userId) {
+            return res.redirect('/dashboard');
+        }
         res.render('login', { error: null });
     });
 
