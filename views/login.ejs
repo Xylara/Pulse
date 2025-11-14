@@ -87,12 +87,27 @@
             border: none;
             cursor: pointer;
         }
+    .toggle-link {
+        background-color: transparent;
+        color: #000000;
+        padding: 0;
+        border: none;
+        cursor: pointer;
+    }
+    .error-message {
+        color: red;
+        text-align: center;
+        margin-bottom: 15px;
+    }
     </style>
 </head>
 <body>
     <div class="login-content">
         <div id="login-form-container">
             <h2>Login</h2>
+            <% if (error) { %>
+                <p class="error-message"><%= error %></p>
+            <% } %>
             <form action="/login" method="POST">
                 <div class="form-group">
                     <label for="username">Username</label>
