@@ -49,7 +49,7 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
         if (config['email-verification']) {
             pool.query('SELECT is_verified FROM users WHERE id = $1', [req.session.userId])
                 .then(result => {
-                    const user = result.rows;
+                    const user = result.rows[0];
                     if (user && user.is_verified === 'yes') {
                         return next();
                     } else {
