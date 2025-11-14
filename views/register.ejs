@@ -67,9 +67,18 @@
             background-color: #333333;
         }
         .error-message {
+            width: 300px;
             color: red;
             text-align: center;
             margin-bottom: 15px;
+            word-break: break-word;
+        }
+        .success-message {
+            width: 300px;
+            color: green;
+            text-align: center;
+            margin-bottom: 15px;
+            word-break: break-word;
         }
     </style>
 </head>
@@ -77,7 +86,11 @@
     <div class="login-content">
         <h2>Register</h2>
         <% if (error) { %>
-            <p class="error-message"><%= error %></p>
+            <% if (error.includes('successful')) { %>
+                <p class="success-message"><%= error %></p>
+            <% } else { %>
+                <p class="error-message"><%= error %></p>
+            <% } %>
         <% } %>
         <form action="/register" method="POST">
             <div class="form-group">

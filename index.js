@@ -36,14 +36,9 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-function isAuthenticated(req, res, next) {
-    if (req.session.userId) {
-        return next();
-    }
-    res.redirect('/');
-}
+const { router: authRouter, isAuthenticated } = createAuthRouter(pool, bcrypt, saltRounds);
 
-app.use('/', createAuthRouter(pool, bcrypt, saltRounds));
+app.use('/', authRouter);
 
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
