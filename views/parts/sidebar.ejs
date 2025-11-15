@@ -1,44 +1,35 @@
 <style>
     .sidebar {
-        width: 72px; 
-        background-color: rgba(32, 34, 37, 0.8); 
-        flex-shrink: 0; 
-        padding-top: 12px;
-        margin-right: 2px; 
-        border-radius: 50px; 
+        width: 250px;
+        height: 100vh;
+        background-color: #1a1a1a;
+        color: white;
+        padding: 20px 0;
+        box-sizing: border-box;
+        position: fixed;
+        top: 0;
+        left: 0;
         display: flex;
         flex-direction: column;
-        align-items: center;
     }
-    .sidebar-icon {
-        width: 48px;
-        height: 48px;
-        background-color: #36393f; 
-        border-radius: 50%; 
-        margin-bottom: 8px;
+
+    .sidebar {
+        width: 72px; 
+        height: 100vh;
+        background-color: #ffffff; 
+        color: #333; 
+        padding: 10px 0; 
+        box-sizing: border-box;
+        position: fixed;
+        top: 0;
+        left: 0;
         display: flex;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        transition: border-radius 0.2s, background-color 0.2s;
-    }
-    .sidebar-icon:hover {
-        border-radius: 30%; 
-        background-color: #5865f2; 
-    }
-    .sidebar-icon.active {
-        border-radius: 30%;
-        background-color: #5865f2;
-    }
-    .sidebar-icon.home {
-        background-color: #5865f2;
-        margin-bottom: 16px;
-    }
-    .sidebar-icon.home:hover {
-        background-color: #5865f2;
+        flex-direction: column;
+        align-items: center; 
+        border-right: 1px solid #e0e0e0; 
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); 
     }
 </style>
+
 <div class="sidebar">
 </div>

@@ -9,11 +9,16 @@
         body {
             font-family: 'Be Vietnam Pro', sans-serif;
             background-color: #f4f4f4;
-            display: flex; 
+            display: flex;
             min-height: 100vh;
             margin: 0;
-            padding: 10px 4px; 
+            overflow: hidden;
             box-sizing: border-box;
+        }
+        .main-area {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
         }
         .content-area {
             flex-grow: 1;
@@ -51,8 +56,11 @@
 </head>
 <body>
     <%- include('parts/sidebar') %>
-    <div class="content-area">
-        <div class="dashboard-content">
+    <div class="main-area">
+        <%- include('parts/topbar') %>
+        <div class="content-area">
+            <div class="dashboard-content">
+            </div>
         </div>
     </div>
 </body>
