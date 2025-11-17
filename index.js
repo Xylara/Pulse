@@ -40,6 +40,18 @@ app.use(session({
 
 const { router: authRouter, isAuthenticated } = createAuthRouter(pool, bcrypt, saltRounds);
 
+app.use((req, res, next) => {
+    res.locals.user = req.session.user;
+    next();
+});
+const isAdmin = (req, res, next) => {
+    if (req.session.user && req.session.user.isadmin && req.session.user.isadmin.toLowerCase() === 'yes') {
+        next();
+    } else {
+        res.status(403).send('Access Denied: Admins only.');
+    }
+};
+
 app.use('/', authRouter);
 
 app.get('/logout', (req, res) => {
@@ -47,6 +59,10 @@ app.get('/logout', (req, res) => {
         if (err) {
             console.error('Logout error:', err);
         }
+app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
+    res.send('Admin Dashboard');
+});
+
         res.redirect('/');
     });
 });

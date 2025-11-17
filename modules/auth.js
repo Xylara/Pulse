@@ -137,6 +137,7 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
 
             if (passwordMatch) {
                 req.session.userId = user.id;
+                req.session.user = user;
                 res.redirect('/dashboard');
             } else {
                 res.render('login', { error: 'Invalid username or password.' });
