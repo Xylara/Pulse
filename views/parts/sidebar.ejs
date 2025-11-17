@@ -1,35 +1,54 @@
 <style>
     .sidebar {
-        width: 250px;
+        width: 72px;
         height: 100vh;
-        background-color: #1a1a1a;
-        color: white;
-        padding: 20px 0;
+        background-color: #ffffff;
+        color: #333;
+        padding: 10px 0;
         box-sizing: border-box;
         position: fixed;
         top: 0;
         left: 0;
         display: flex;
         flex-direction: column;
+        align-items: center;
+        border-right: 1px solid #e0e0e0;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     }
 
-    .sidebar {
-        width: 72px; 
-        height: 100vh;
-        background-color: #ffffff; 
-        color: #333; 
-        padding: 10px 0; 
-        box-sizing: border-box;
-        position: fixed;
-        top: 0;
-        left: 0;
+    .sidebar-link {
         display: flex;
-        flex-direction: column;
-        align-items: center; 
-        border-right: 1px solid #e0e0e0; 
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); 
+        justify-content: center;
+        align-items: center;
+        width: 52px;
+        height: 52px;
+        margin: 10px 0;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+
+    .sidebar-link:hover {
+        background-color: #f0f0f0;
+    }
+
+    .sidebar-link.active {
+        background-color: #f0f0f0;
+    }
+
+
+    .sidebar-link img {
+        width: 32px;
+        height: 32px;
     }
 </style>
 
 <div class="sidebar">
+    <%
+        const isActive = currentPath === '/dashboard' || currentPath.startsWith('/friends/');
+        const activeClass = isActive ? ' active' : '';
+    %>
+    <a href="/dashboard" class="sidebar-link<%= activeClass %>">
+        <img src="/others/pulse.png" alt="Pulse Logo">
+    </a>
 </div>

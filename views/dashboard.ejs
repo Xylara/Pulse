@@ -52,10 +52,26 @@
         .logout-button:hover {
             background-color: #333333;
         }
+    .loading-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background-color: #007bff; 
+        width: 0;
+        z-index: 1000;
+        transition: width 0.4s ease-in-out, opacity 0.5s ease-out;
+        opacity: 1;
+    }
+    .loading-bar.finished {
+        opacity: 0;
+        width: 100%;
+    }
     </style>
 </head>
 <body>
-    <%- include('parts/sidebar') %>
+    <%- include('parts/sidebar', { currentPath: request.url }) %>
+    <div id="loading-bar" class="loading-bar"></div>
     <div class="main-area">
         <%- include('parts/topbar') %>
         <div class="content-area">
@@ -63,5 +79,17 @@
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingBar = document.getElementById('loading-bar');
+
+            loadingBar.style.width = '100%';
+            loadingBar.classList.add('finished');
+
+            setTimeout(() => {
+                loadingBar.remove();
+            }, 500); 
+        });
+    </script>
 </body>
 </html>

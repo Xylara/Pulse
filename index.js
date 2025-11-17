@@ -29,6 +29,8 @@ app.set('view engine', 'ejs');
 
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/others', express.static('others'));
+
 app.use(session({
     secret: process.env.SESSION_SECRET || 'pulse',
     resave: false,
@@ -50,7 +52,7 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/dashboard', isAuthenticated, (req, res) => {
-    res.render('dashboard');
+    res.render('dashboard', { request: req });
 });
 
 app.listen(port, () => {

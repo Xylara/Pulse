@@ -101,10 +101,26 @@
         margin-bottom: 15px;
         word-break: break-word;
     }
+    .loading-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background-color: #007bff; 
+        width: 0;
+        z-index: 1000;
+        transition: width 0.4s ease-in-out, opacity 0.5s ease-out;
+        opacity: 1;
+    }
+    .loading-bar.finished {
+        opacity: 0;
+        width: 100%;
+    }
     </style>
 </head>
 <body>
     <div class="login-content">
+    <div id="loading-bar" class="loading-bar"></div>
         <div id="login-form-container">
             <h2>Login</h2>
             <% if (error) { %>
@@ -170,6 +186,21 @@
             registerContainer.classList.add('hidden');
             loginContainer.classList.remove('hidden');
         });
+    </script>
+    <script>
+        const loginForm = document.querySelector('#login-form-container form');
+        const registerForm = document.querySelector('#register-form-container form');
+        const loadingBar = document.getElementById('loading-bar');
+
+        function startLoading() {
+            loadingBar.style.width = '30%';
+            setTimeout(() => {
+                loadingBar.style.width = '70%';
+            }, 400);
+        }
+
+        loginForm.addEventListener('submit', startLoading);
+        registerForm.addEventListener('submit', startLoading);
     </script>
 </body>
 </html>
