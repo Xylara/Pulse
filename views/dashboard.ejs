@@ -68,6 +68,30 @@
         width: 100%;
     }
     </style>
+    <style>
+        .announcement-container {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 80px;
+            padding: 15px;
+            background-color: #fff3cd; 
+            border: 1px solid #ffeeba; 
+            border-radius: 8px;
+            color: #856404; 
+            text-align: left;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .announcement-container h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        .announcement-container p {
+            margin-bottom: 0;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
     <%- include('parts/sidebar', { currentPath: request.url }) %>
@@ -75,6 +99,9 @@
     <div class="main-area">
         <%- include('parts/topbar') %>
         <div class="content-area">
+            <div id="announcement-display" class="announcement-container" style="display: none;">
+                <!-- Announcement will be loaded here -->
+            </div>
             <div class="dashboard-content">
             </div>
         </div>
@@ -82,13 +109,37 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const loadingBar = document.getElementById('loading-bar');
+            const announcementDisplay = document.getElementById('announcement-display');
 
             loadingBar.style.width = '100%';
             loadingBar.classList.add('finished');
 
             setTimeout(() => {
                 loadingBar.remove();
-            }, 500); 
+            }, 500);
+
+            const fetchAnnouncement = async () => {
+                try {
+                    const response = await fetch('/api/announcements/latest');
+                    if (response.ok) {
+                        const announcement = await response.json();
+                        announcementDisplay.innerHTML = `
+                            <h3>Announcement: ${announcement.title}</h3>
+                            <p>${announcement.content}</p>
+                        `;
+                        announcementDisplay.style.display = 'block';
+                    } else if (response.status === 404) {
+
+                        announcementDisplay.style.display = 'none';
+                    } else {
+                        console.error('Error fetching announcement:', await response.json());
+                    }
+                } catch (error) {
+                    console.error('Network error fetching announcement:', error);
+                }
+            };
+
+            fetchAnnouncement();
         });
     </script>
 </body>

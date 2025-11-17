@@ -9,3 +9,11 @@ CREATE TABLE users (
     is_verified VARCHAR(3) DEFAULT 'no' NOT NULL,
     verification_token VARCHAR(255)
 );
+DROP TABLE IF EXISTS announcements;
+
+CREATE TABLE announcements (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

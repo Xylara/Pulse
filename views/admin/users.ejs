@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users - Pulse</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+        }
+        .content-area {
+            margin-left: 200px; 
+            padding: 20px;
+        }
+        .page-content {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .page-content h2 {
+            margin-top: 0;
+            color: #000;
+            font-size: 1.5em;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .user-table th, .user-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .user-table th {
+            background-color: #f8f8f8;
+            color: #333;
+            font-weight: bold;
+        }
+        .user-table tr:hover {
+            background-color: #f1f1f1;
+        }
+        .action-icon {
+            color: #333;
+            margin-right: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .action-icon:hover {
+            color: #007bff;
+        }
+        .verified-icon {
+            color: green;
+        }
+        .unverified-icon {
+            color: red;
+        }
+        .delete-icon {
+            color: red;
+        }
+    </style>
+    <style>
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-content input[type="text"],
+        .modal-content input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .modal-content button {
+            background-color: #000;
+            color: white;
+            padding: 10px 15px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+        }
+        .modal-content button:hover {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../parts/admin_sidebar', { request: request }) %>
+    <div class="content-area">
+        <div class="page-content">
+            <h2>User Management</h2>
+
+            <% if (typeof users !== 'undefined' && users.length > 0) { %>
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% users.forEach(user => { %>
+                            <tr>
+                                <td><%= user.id %></td>
+                                <td><%= user.username %></td>
+                                <td>
+                                    <!-- Make Admin (user.is_admin is assumed) -->
+                                    <a href="/admin/users/<%= user.id %>/toggle-admin" title="<%= user.is_admin ? 'Revoke Admin' : 'Make Admin' %>">
+                                        <i class="fas <%= user.is_admin ? 'fa-user-shield' : 'fa-user-plus' %> action-icon"></i>
+                                    </a>
+
+                                    <!-- Update Username (Placeholder for a modal/form action) -->
+                                    <a href="#" onclick="openUpdateUsernameModal('<%= user.id %>', '<%= user.username %>')" title="Update Username">
+                                        <i class="fas fa-user-edit action-icon"></i>
+                                    </a>
+
+                                    <!-- Change Password (Placeholder for a modal/form action) -->
+                                    <a href="#" onclick="openChangePasswordModal('<%= user.id %>', '<%= user.username %>')" title="Change Password">
+                                        <i class="fas fa-key action-icon"></i>
+                                    </a>
+
+                                    <!-- Set Verified (user.is_verified is assumed) -->
+                                    <a href="/admin/users/<%= user.id %>/toggle-verified" title="<%= user.is_verified ? 'Unverify User' : 'Set Verified' %>">
+                                        <i class="fas <%= user.is_verified ? 'fa-check-circle verified-icon' : 'fa-times-circle unverified-icon' %> action-icon"></i>
+                                    </a>
+
+                                    <!-- Delete Account (Placeholder for a form submission/confirmation) -->
+                                    <a href="/admin/users/<%= user.id %>/delete" onclick="return confirm('Are you sure you want to delete user <%= user.username %>?')" title="Delete Account">
+                                        <i class="fas fa-trash-alt action-icon delete-icon"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            <% } else { %>
+                <p>No users found.</p>
+            <% } %>
+        </div>
+    </div>
+</body>
+
+<!-- Update Username Modal -->
+<div id="updateUsernameModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('updateUsernameModal')">&times;</span>
+        <h2>Update Username for <span id="username-target"></span></h2>
+        <form action="/admin/users/update-username" method="POST">
+            <input type="hidden" id="update-username-user-id" name="id">
+            <label for="new-username">New Username:</label>
+            <input type="text" id="new-username" name="username" required>
+            <div style="clear: both;">
+                <button type="submit">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('changePasswordModal')">&times;</span>
+        <h2>Change Password for <span id="password-target"></span></h2>
+        <form action="/admin/users/change-password" method="POST">
+            <input type="hidden" id="change-password-user-id" name="id">
+            <label for="new-password">New Password:</label>
+            <input type="password" id="new-password" name="password" required>
+            <label for="repeat-password">Repeat Password:</label>
+            <input type="password" id="repeat-password" name="repeat_password" required>
+            <div style="clear: both;">
+                <button type="submit">Change</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openUpdateUsernameModal(userId, username) {
+        document.getElementById('update-username-user-id').value = userId;
+        document.getElementById('username-target').textContent = username;
+        document.getElementById('updateUsernameModal').style.display = 'block';
+    }
+
+    function openChangePasswordModal(userId, username) {
+        document.getElementById('change-password-user-id').value = userId;
+        document.getElementById('password-target').textContent = username;
+        document.getElementById('changePasswordModal').style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
+
+</html>

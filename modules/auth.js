@@ -7,7 +7,7 @@ const nodemailer = require('nodemailer');
 
 const configPath = path.join(__dirname, '..', 'config.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-const BASE_URL = process.env.BASE_URL;
+const BASE_URL = process.env.BASE_URL.replace(/\/$/, '');
 const EMAIL_FROM = process.env.EMAIL_FROM;
 
 const transporter = nodemailer.createTransport({
