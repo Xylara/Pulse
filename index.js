@@ -133,6 +133,10 @@ const isAdmin = (req, res, next) => {
 };
 const adminRouter = createAdminRouter(pool, isAuthenticated, isAdmin, bcrypt, saltRounds);
 app.use('/', authRouter);
+app.get('/admin/announcements', isAuthenticated, isAdmin, (req, res) => {
+    res.render('admin/announcements', { request: req, csrfToken: req.session.csrfSecret });
+});
+
 app.use('/api/announcements', announcementsRouter);
 app.use('/api/friends', friendsRouter);
 app.use('/dm', dmRouter);
