@@ -29,9 +29,19 @@ const pool = new Pool({
         rejectUnauthorized: false,
     },
 });
+pool.on('error', (err, client) => {
+    console.error('Unexpected error on idle client', err);
+});
+
 pool.connect()
-    .then(() => console.log('Database connected'))
-    .catch(err => console.error('error', err.stack));
+    .then(client => {
+        console.log('Database connected');
+        client.on('error', (err) => {
+            console.error('Unhandled error on client', err);
+        });
+        client.release();
+    })
+    .catch(err => console.error('Database connection error', err.stack));
 app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
