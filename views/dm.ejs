@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DM with <%= friendUsername %></title>
+    <link rel="stylesheet" href="/others/style.css">
+    <link rel="stylesheet" href="/others/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script> 
+    <style>
+        body {
+            display: flex;
+            font-family: 'Poppins', sans-serif; 
+            background-color: #f0f2f5; 
+            margin: 0;
+            color: #333; 
+        }
+        .main-content {
+            margin-left: 72px; 
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f2f5;
+            padding: 20px; 
+            box-sizing: border-box;
+        }
+        .dm-header {
+            background-color: #ffffff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+        .dm-header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+        .dm-header h2 {
+            margin: 0;
+            font-size: 1.4em;
+            color: #333;
+            font-weight: 600;
+        }
+        .message-container {
+            flex-grow: 1;
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 10px 0; 
+            overflow-y: auto;
+            overflow-x: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .message-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .message-container::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            border-radius: 4px;
+        }
+        .message {
+            display: flex;
+            padding: 8px 20px; 
+            margin-top: 4px; 
+            position: relative;
+        }
+        .message:hover {
+            background-color: #f7f7f7; 
+        }
+        .message-avatar-wrapper {
+            margin-right: 16px;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+        .message-sender-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .message-sender-avatar:hover {
+            opacity: 0.9;
+        }
+        .message-body {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            flex-grow: 1;
+        }
+        .message-header {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .message-username {
+            font-size: 1em;
+            font-weight: 600;
+            color: #333; 
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        .message-username:hover {
+            text-decoration: underline;
+        }
+        .message-timestamp {
+            font-size: 0.75em;
+            color: #888; 
+            font-weight: 400;
+        }
+        .message-content {
+            font-size: 0.95em;
+            line-height: 1.5;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .message-content p { margin: 0; }
+        .message-content code {
+            background-color: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #d63384;
+        }
+        .message-content blockquote {
+            border-left: 4px solid #e0e0e0;
+            margin: 0;
+            padding-left: 10px;
+            color: #666;
+        }
+        .message-input-form {
+            background-color: #ffffff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .message-input-form textarea {
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px; 
+            color: #333;
+            padding: 10px 15px;
+            font-size: 1em;
+            height: 44px;
+            min-height: 44px;
+            max-height: 150px;
+            resize: none;
+            flex-grow: 1;
+            font-family: 'Poppins', sans-serif;
+            transition: border-color 0.2s;
+        }
+        .message-input-form textarea:focus {
+            outline: none;
+            border-color: #007bff; 
+        }
+        .message-input-form button {
+            background-color: #000000; 
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: background-color 0.2s;
+        }
+        .message-input-form button:hover:not(:disabled) {
+            background-color: #333;
+        }
+        #sendButton {
+            display: none; 
+        }
+        .dm-no-messages { text-align: center; color: #888; padding: 20px; margin-top: 20px; }
+        .encryption-alert { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin-bottom: 10px; text-align: center; display: none;}
+    </style>
+</head>
+<body>
+    <%- include('parts/sidebar', { currentPath: `/dm/${friendUsername}` }) %>
+    <div class="main-content">
+        <div class="dm-header">
+            <% const friendProfilePicture = messages.length > 0 && messages[0].sender_id != currentUser.id ? messages[0].sender_profile_picture : '/others/default_avatar.png'; %>
+            <img src="<%= friendProfilePicture %>" alt="<%= friendUsername %>'s profile picture">
+            <h2><%= friendUsername %></h2>
+        </div>
+        <div id="encryptionStatus" class="encryption-alert"></div>
+        <div class="message-container" id="messageContainer">
+            <% messages.forEach(message => { 
+                const isMe = message.sender_id === currentUser.id;
+                const avatarUrl = isMe ? (currentUser.profile_picture || '/others/default_avatar.png') : (message.sender_profile_picture || '/others/default_avatar.png');
+                const username = isMe ? currentUser.username : message.sender_username;
+            %>
+                <div class="message">
+                    <div class="message-avatar-wrapper">
+                        <img src="<%= avatarUrl %>" class="message-sender-avatar" alt="Avatar">
+                    </div>
+                    <div class="message-body">
+                        <div class="message-header">
+                            <span class="message-username"><%= username %></span>
+                            <span class="message-timestamp">
+                                <%= new Date(message.timestamp).toLocaleDateString() %> 
+                                <%= new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
+                            </span>
+                        </div>
+                        <div class="message-content" data-encrypted-content="<%= message.content %>"></div>
+                    </div>
+                </div>
+            <% }); %>
+            <% if (messages.length === 0) { %>
+                <div class="dm-no-messages">
+                    <p>No messages yet. Start a conversation with @<%= friendUsername %>!</p>
+                </div>
+            <% } %>
+        </div>
+        <form class="message-input-form" id="messageForm">
+            <textarea id="messageContent" placeholder="Type your message..." rows="1" disabled></textarea>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" id="sendButton" disabled>Send</button>
+        </form>
+    </div>
+    <script>
+        const CURRENT_USER_ID = '<%= currentUser.id %>';
+        const CURRENT_USERNAME = '<%= currentUser.username %>';
+        const CURRENT_USER_AVATAR = '<%= currentUser.profile_picture || "/others/default_avatar.png" %>';
+        const FRIEND_ID = '<%= friendId %>'; 
+        const FRIEND_PUBLIC_KEY_JSON = '<%- friendPublicKey || "" %>'; 
+        const socket = io(); 
+        let sharedAesKey = null;
+        async function setupEncryption() {
+            const statusDiv = document.getElementById('encryptionStatus');
+            const textArea = document.getElementById('messageContent');
+            const sendBtn = document.getElementById('sendButton'); 
+            try {
+                let myKeyPair = await getMyKeyPair();
+                const exportedPublicKey = await window.crypto.subtle.exportKey("jwk", myKeyPair.publicKey);
+                await uploadPublicKey(JSON.stringify(exportedPublicKey));
+                if (!FRIEND_PUBLIC_KEY_JSON) {
+                    statusDiv.innerText = "Waiting for friend's key...";
+                    statusDiv.style.display = "block";
+                    return; 
+                }
+                const friendKeyData = JSON.parse(FRIEND_PUBLIC_KEY_JSON);
+                const friendPublicKey = await window.crypto.subtle.importKey("jwk", friendKeyData, { name: "ECDH", namedCurve: "P-256" }, true, []);
+                const sharedBits = await window.crypto.subtle.deriveBits({ name: "ECDH", public: friendPublicKey }, myKeyPair.privateKey, 256);
+                const sharedBuffer = new Uint8Array(sharedBits);
+                sharedAesKey = Array.from(sharedBuffer).map(b => b.toString(16).padStart(2, '0')).join('');
+                textArea.disabled = false;
+                sendBtn.disabled = false;
+                decryptAllMessages();
+            } catch (err) {
+                console.error("Encryption error:", err);
+                statusDiv.innerText = "Encryption Error";
+                statusDiv.style.display = "block";
+            }
+        }
+        async function getMyKeyPair() {
+            const keyName = `e2ee_keypair_${CURRENT_USER_ID}`;
+            const storedKey = localStorage.getItem(keyName);
+            if (storedKey) {
+                const { pub, priv } = JSON.parse(storedKey);
+                const publicKey = await window.crypto.subtle.importKey("jwk", pub, { name: "ECDH", namedCurve: "P-256" }, true, []);
+                const privateKey = await window.crypto.subtle.importKey("jwk", priv, { name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+                return { publicKey, privateKey };
+            } else {
+                const keyPair = await window.crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+                const pubJwk = await window.crypto.subtle.exportKey("jwk", keyPair.publicKey);
+                const privJwk = await window.crypto.subtle.exportKey("jwk", keyPair.privateKey);
+                localStorage.setItem(keyName, JSON.stringify({ pub: pubJwk, priv: privJwk }));
+                return keyPair;
+            }
+        }
+        async function uploadPublicKey(keyJsonString) {
+            const csrfToken = document.querySelector('input[name="_csrf"]').value;
+            await fetch('/dm/api/save-public-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                body: JSON.stringify({ publicKey: keyJsonString })
+            });
+        }
+        function encryptMessage(message, key) {
+            return CryptoJS.AES.encrypt(message, key).toString();
+        }
+        function decryptMessage(encryptedMessage, key) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(encryptedMessage, key);
+                let decrypted = bytes.toString(CryptoJS.enc.Utf8);
+                return decrypted ? decrypted.replace(/\0/g, '').trim() : ""; 
+            } catch (e) { return ""; }
+        }
+        function decryptAllMessages() {
+            const messageContents = document.querySelectorAll('.message-content[data-encrypted-content]');
+            messageContents.forEach(div => {
+                if(div.dataset.decrypted === "true") return;
+                const content = div.dataset.encryptedContent;
+                const decrypted = decryptMessage(content, sharedAesKey);
+                if (decrypted) {
+                    div.innerHTML = marked.parse(decrypted);
+                    div.dataset.decrypted = "true";
+                } else {
+                    div.innerHTML = '<span style="color:red;">[Encrypted]</span>';
+                }
+            });
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+        function appendMessageToUI(data) {
+            const decryptedContent = decryptMessage(data.content, sharedAesKey);
+            if (!decryptedContent) return; 
+            const messageRow = document.createElement('div');
+            messageRow.classList.add('message');
+            const avatarWrapper = document.createElement('div');
+            avatarWrapper.classList.add('message-avatar-wrapper');
+            const avatarImg = document.createElement('img');
+            avatarImg.src = data.sender_profile_picture || '/others/default_avatar.png';
+            avatarImg.classList.add('message-sender-avatar');
+            avatarWrapper.appendChild(avatarImg);
+            const bodyWrapper = document.createElement('div');
+            bodyWrapper.classList.add('message-body');
+            const header = document.createElement('div');
+            header.classList.add('message-header');
+            const usernameSpan = document.createElement('span');
+            usernameSpan.classList.add('message-username');
+            usernameSpan.textContent = data.sender_username;
+            const timeSpan = document.createElement('span');
+            timeSpan.classList.add('message-timestamp');
+            const dateObj = new Date(data.timestamp);
+            timeSpan.textContent = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            header.appendChild(usernameSpan);
+            header.appendChild(timeSpan);
+            const contentDiv = document.createElement('div');
+            contentDiv.classList.add('message-content');
+            contentDiv.innerHTML = marked.parse(decryptedContent);
+            bodyWrapper.appendChild(header);
+            bodyWrapper.appendChild(contentDiv);
+            messageRow.appendChild(avatarWrapper);
+            messageRow.appendChild(bodyWrapper);
+            messageContainer.appendChild(messageRow);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+        socket.on('receive_message', (data) => {
+            if (data.sender_id == FRIEND_ID) {
+                appendMessageToUI(data);
+            }
+        });
+        const messageContainer = document.getElementById('messageContainer');
+        const messageForm = document.getElementById('messageForm');
+        const messageContentInput = document.getElementById('messageContent');
+        messageContentInput.addEventListener('input', () => {
+            messageContentInput.style.height = '44px'; 
+            messageContentInput.style.height = messageContentInput.scrollHeight + 'px';
+        });
+        messageContentInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                messageForm.dispatchEvent(new Event('submit'));
+            }
+        });
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!sharedAesKey) return;
+            const content = messageContentInput.value.trim();
+            if (!content) return;
+            const csrfToken = messageForm.querySelector('input[name="_csrf"]').value;
+            const encryptedContent = encryptMessage(content, sharedAesKey);
+            try {
+                const response = await fetch(`/dm/<%= friendUsername %>/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                    body: JSON.stringify({ content: encryptedContent })
+                });
+                if (response.ok) {
+                    appendMessageToUI({
+                        sender_username: CURRENT_USERNAME,
+                        sender_profile_picture: CURRENT_USER_AVATAR,
+                        content: encryptedContent, 
+                        timestamp: new Date().toISOString()
+                    });
+                    messageContentInput.value = '';
+                    messageContentInput.style.height = '44px'; 
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        });
+        document.addEventListener('DOMContentLoaded', setupEncryption);
+    </script>
+</body>
+</html>

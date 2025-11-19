@@ -46,6 +46,12 @@
         border-radius: 50%;
         object-fit: cover;
     }
+    .sidebar-divider {
+        width: 60%;
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 15px 0;
+    }
 
     .sidebar-link-container {
         position: relative;
@@ -103,7 +109,7 @@
 <div class="sidebar">
     <%
         const isDashboardActive = currentPath === '/dashboard';
-        const isFriendsActive = currentPath.startsWith('/friends');
+        const isFriendsActive = currentPath === '/friends';
         const isSettingsActive = currentPath === '/settings';
     %>
     <div class="sidebar-link-container">
@@ -126,6 +132,21 @@
         </a>
         <div class="sidebar-tooltip">Settings</div>
     </div>
+
+    <% if (user && user.friends && user.friends.length > 0) { %>
+    <div class="sidebar-divider"></div>
+    <div class="friends-sidebar-section">
+        <% user.friends.forEach(friend => { %>
+        <% const isDmActive = currentPath === `/dm/${friend.username}`; %>
+        <div class="sidebar-link-container">
+            <a href="/dm/<%= friend.username %>" class="sidebar-link<%= isDmActive ? ' active' : '' %>">
+                <img src="<%= friend.profile_picture %>" alt="<%= friend.username %>'s profile picture" class="profile-picture-icon">
+            </a>
+            <div class="sidebar-tooltip"><%= friend.username %></div>
+        </div>
+        <% }); %>
+    </div>
+    <% } %>
 
     <% if (user && user.isadmin && user.isadmin.toLowerCase() === 'yes') { %>
     <div class="sidebar-link-container" style="margin-top: auto;">

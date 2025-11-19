@@ -5,11 +5,11 @@ const fs = require('fs');
 const FormData = require('form-data');
 const axios = require('axios');
 
-function createSettingsRouter(pool, isAuthenticated, bcrypt, saltRounds, nimbusUrl, nimbusApi) {
+function createSettingsRouter(pool, isAuthenticated, bcrypt, saltRounds, nimbusUrl, nimbusApi, getCsrfToken) {
     const router = express.Router();
 
     router.get('/', isAuthenticated, (req, res) => {
-        res.render('settings', { request: req, successMessage: null, errorMessage: null });
+        res.render('settings', { request: req, successMessage: null, errorMessage: null, csrfToken: getCsrfToken(req) });
     });
 
     router.post('/change-username', isAuthenticated, async (req, res) => {
@@ -17,26 +17,26 @@ function createSettingsRouter(pool, isAuthenticated, bcrypt, saltRounds, nimbusU
         const userId = req.session.user.id;
 
         if (!newUsername) {
-            return res.render('settings', { request: req, errorMessage: 'New username cannot be empty.', successMessage: null });
+            return res.render('settings', { request: req, errorMessage: 'New username cannot be empty.', successMessage: null, csrfToken: getCsrfToken(req) });
         }
 
         const disallowedCharsPattern = /[<>"'&]/;
         if (disallowedCharsPattern.test(newUsername)) {
-            return res.render('settings', { request: req, errorMessage: 'Username cannot contain <, >, ", \', or & characters.', successMessage: null });
+            return res.render('settings', { request: req, errorMessage: 'Username cannot contain <, >, ", \', or & characters.', successMessage: null, csrfToken: getCsrfToken(req) });
         }
 
         try {
             const existingUser = await pool.query('SELECT id FROM users WHERE username = $1', [newUsername]);
             if (existingUser.rows.length > 0) {
-                return res.render('settings', { request: req, errorMessage: 'Username already taken.', successMessage: null });
+                return res.render('settings', { request: req, errorMessage: 'Username already taken.', successMessage: null, csrfToken: getCsrfToken(req) });
             }
 
             await pool.query('UPDATE users SET username = $1 WHERE id = $2', [newUsername, userId]);
             req.session.user.username = newUsername;
-            res.render('settings', { request: req, successMessage: 'Username updated successfully!', errorMessage: null });
+            res.render('settings', { request: req, successMessage: 'Username updated successfully!', errorMessage: null, csrfToken: getCsrfToken(req) });
         } catch (error) {
             console.error('Error changing username:', error);
-            res.render('settings', { request: req, errorMessage: 'Failed to update username.', successMessage: null });
+            res.render('settings', { request: req, errorMessage: 'Failed to update username.', successMessage: null, csrfToken: getCsrfToken(req) });
         }
     });
 
@@ -45,11 +45,11 @@ function createSettingsRouter(pool, isAuthenticated, bcrypt, saltRounds, nimbusU
         const userId = req.session.user.id;
 
         if (!currentPassword || !newPassword || !confirmNewPassword) {
-            return res.render('settings', { request: req, errorMessage: 'All password fields are required.', successMessage: null });
+            return res.render('settings', { request: req, errorMessage: 'All password fields are required.', successMessage: null, csrfToken: getCsrfToken(req) });
         }
 
         if (newPassword !== confirmNewPassword) {
-            return res.render('settings', { request: req, errorMessage: 'New passwords do not match.', successMessage: null });
+            return res.render('settings', { request: req, errorMessage: 'New passwords do not match.', successMessage: null, csrfToken: getCsrfToken(req) });
         }
 
         try {
@@ -57,15 +57,15 @@ function createSettingsRouter(pool, isAuthenticated, bcrypt, saltRounds, nimbusU
             const user = result.rows[0];
 
             if (!user || !(await bcrypt.compare(currentPassword, user.password_hash))) {
-                return res.render('settings', { request: req, errorMessage: 'Incorrect current password.', successMessage: null });
+                return res.render('settings', { request: req, errorMessage: 'Incorrect current password.', successMessage: null, csrfToken: getCsrfToken(req) });
             }
 
             const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
             await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newPasswordHash, userId]);
-            res.render('settings', { request: req, successMessage: 'Password updated successfully!', errorMessage: null });
+            res.render('settings', { request: req, successMessage: 'Password updated successfully!', errorMessage: null, csrfToken: getCsrfToken(req) });
         } catch (error) {
             console.error('Error changing password:', error);
-            res.render('settings', { request: req, errorMessage: 'Failed to update password.', successMessage: null });
+            res.render('settings', { request: req, errorMessage: 'Failed to update password.', successMessage: null, csrfToken: getCsrfToken(req) });
         }
     });
 
@@ -103,14 +103,23 @@ function createSettingsRouter(pool, isAuthenticated, bcrypt, saltRounds, nimbusU
         upload(req, res, async (err) => {
             if (err) {
                 console.error('Error uploading file locally:', err);
-                return res.render('settings', { request: req, errorMessage: err, successMessage: null });
+                return res.render('settings', { request: req, errorMessage: err, successMessage: null, csrfToken: getCsrfToken(req) });
             }
+
+            const csrfTokenFromForm = req.body._csrf;
+            if (!csrfTokenFromForm || csrfTokenFromForm !== getCsrfToken(req)) {
+                fs.unlink(req.file.path, (unlinkErr) => {
+                    if (unlinkErr) console.error('Error deleting temp file after CSRF failure:', unlinkErr);
+                });
+                return res.status(403).render('settings', { request: req, errorMessage: 'CSRF token missing or invalid.', successMessage: null, csrfToken: getCsrfToken(req) });
+            }
+
             if (!req.file) {
-                return res.render('settings', { request: req, errorMessage: 'No file selected.', successMessage: null });
+                return res.render('settings', { request: req, errorMessage: 'No file selected.', successMessage: null, csrfToken: getCsrfToken(req) });
             }
 
             const userId = req.session.user.id;
-            const filePath = req.file.path; 
+            const filePath = req.file.path;
             const filename = req.file.filename;
 
             const userResult = await pool.query('SELECT profile_picture FROM users WHERE id = $1', [userId]);
@@ -121,7 +130,7 @@ function createSettingsRouter(pool, isAuthenticated, bcrypt, saltRounds, nimbusU
                     fs.unlink(filePath, (unlinkErr) => { 
                         if (unlinkErr) console.error('Error deleting temp file:', unlinkErr);
                     });
-                    return res.render('settings', { request: req, errorMessage: 'CDN configuration missing.', successMessage: null });
+                    return res.render('settings', { request: req, errorMessage: 'CDN configuration missing.', successMessage: null, csrfToken: getCsrfToken(req) });
                 }
 
                 if (previousProfilePicture && previousProfilePicture.startsWith('/uploads/')) {
@@ -187,10 +196,10 @@ function createSettingsRouter(pool, isAuthenticated, bcrypt, saltRounds, nimbusU
                     await pool.query('UPDATE users SET profile_picture = $1 WHERE id = $2', [newProfilePicture, userId]);
                     req.session.user.profile_picture = newProfilePicture;
 
-                    res.render('settings', { request: req, successMessage: 'Profile picture updated successfully!', errorMessage: null });
+                    res.render('settings', { request: req, successMessage: 'Profile picture updated successfully!', errorMessage: null, csrfToken: getCsrfToken(req) });
                 } else {
                     console.error('CDN upload failed: No URL returned. CDN Response Status:', cdnResponse.status, 'CDN Response Data:', cdnResponse.data);
-                    return res.render('settings', { request: req, errorMessage: 'CDN upload failed: No URL returned. Check server logs for details.', successMessage: null });
+                    return res.render('settings', { request: req, errorMessage: 'CDN upload failed: No URL returned. Check server logs for details.', successMessage: null, csrfToken: getCsrfToken(req) });
                 }
 
             } catch (error) {
@@ -207,7 +216,7 @@ function createSettingsRouter(pool, isAuthenticated, bcrypt, saltRounds, nimbusU
                 fs.unlink(filePath, (unlinkErr) => {
                     if (unlinkErr) console.error('Error deleting temp file on CDN upload failure:', unlinkErr);
                 });
-                res.render('settings', { request: req, errorMessage: 'Failed to update profile picture via CDN. Check server logs for details.', successMessage: null });
+                res.render('settings', { request: req, errorMessage: 'Failed to update profile picture via CDN. Check server logs for details.', successMessage: null, csrfToken: getCsrfToken(req) });
             }
         });
     });

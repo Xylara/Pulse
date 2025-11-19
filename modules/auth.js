@@ -43,6 +43,9 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
 
     function isAuthenticated(req, res, next) {
         if (!req.session.userId) {
+            if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+                return res.status(401).json({ error: 'Unauthorized: No active session.' });
+            }
             return res.redirect('/');
         }
 
@@ -53,11 +56,17 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
                     if (user && user.is_verified === 'yes') {
                         return next();
                     } else {
+                        if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+                            return res.status(401).json({ error: 'Unauthorized: Email not verified.' });
+                        }
                         return res.render('login', { error: 'Access denied. Please verify your email.' });
                     }
                 })
                 .catch(err => {
                     console.error('Verification check error:', err);
+                    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+                        return res.status(500).json({ error: 'Server error during verification check.' });
+                    }
                     res.status(500).render('login', { error: 'Server error during verification check.' });
                 });
         } else {
@@ -69,29 +78,29 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
         if (req.session.userId) {
             return res.redirect('/dashboard');
         }
-        res.render('login', { error: null });
+        res.render('login', { error: null, csrfToken: req.session.csrfSecret });
     });
 
     router.get('/register', (req, res) => {
-        res.render('register', { error: null });
+        res.render('register', { error: null, csrfToken: req.session.csrfSecret });
     });
 
     router.post('/register', async (req, res) => {
         const { email, username, password, repeat_password } = req.body;
 
         if (password !== repeat_password) {
-            return res.render('register', { error: 'Passwords dont match.' });
+            return res.render('register', { error: 'Passwords dont match.', csrfToken: req.session.csrfSecret });
         }
 
         const disallowedChars = /[<>"'&]/;
         if (disallowedChars.test(username)) {
-            return res.status(400).render('register', { error: 'Username contains disallowed characters: <, >, ", \', &.' });
+            return res.status(400).render('register', { error: 'Username contains disallowed characters: <, >, ", \', &.', csrfToken: req.session.csrfSecret });
         }
 
         try {
             const userCheck = await pool.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
             if (userCheck.rows.length > 0) {
-                return res.render('register', { error: 'Email or username already exists.' });
+                return res.render('register', { error: 'Email or username already exists.', csrfToken: req.session.csrfSecret });
             }
 
             const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -108,7 +117,7 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
             if (isVerified === 'no') {
                 const verificationLink = `${BASE_URL}/verify/${verificationToken}`;
                 await sendVerificationEmail(email, verificationLink);
-                return res.render('register', { error: 'Registration successful. Please check your email for the verification link.' });
+                return res.render('register', { error: 'Registration successful. Please check your email for the verification link.', csrfToken: req.session.csrfSecret });
             }
 
             res.redirect('/');
@@ -127,11 +136,11 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
             const user = userResult.rows[0];
 
             if (!user) {
-                return res.render('login', { error: 'Invalid username or password.' });
+                return res.render('login', { error: 'Invalid username or password.', csrfToken: req.session.csrfSecret });
             }
 
             if (config['email-verification'] && user.is_verified === 'no') {
-                return res.render('login', { error: 'Account not verified. Please check your email for the verification link.' });
+                return res.render('login', { error: 'Account not verified. Please check your email for the verification link.', csrfToken: req.session.csrfSecret });
             }
 
             const passwordMatch = await bcrypt.compare(password, user.password_hash);
@@ -141,12 +150,12 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
                 req.session.user = user;
                 res.redirect('/dashboard');
             } else {
-                res.render('login', { error: 'Invalid username or password.' });
+                res.render('login', { error: 'Invalid username or password.', csrfToken: req.session.csrfSecret });
             }
 
         } catch (err) {
             console.error('error:', err);
-            res.status(500).render('login', { error: 'Server error.' });
+            res.status(500).render('login', { error: 'Server error.', csrfToken: req.session.csrfSecret });
         }
     });
 
@@ -160,14 +169,14 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
             );
 
             if (result.rows.length === 0) {
-                return res.render('login', { error: 'Invalid or expired verification link.' });
+                return res.render('login', { error: 'Invalid or expired verification link.', csrfToken: req.session.csrfSecret });
             }
 
-            res.render('login', { error: 'Email successfully verified. Please log in.' });
+            res.render('login', { error: 'Email successfully verified. Please log in.', csrfToken: req.session.csrfSecret });
 
         } catch (err) {
             console.error('Verification error:', err);
-            res.status(500).render('login', { error: 'Server error during verification.' });
+            res.status(500).render('login', { error: 'Server error during verification.', csrfToken: req.session.csrfSecret });
         }
     });
 

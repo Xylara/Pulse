@@ -123,6 +123,7 @@
                 <div class="settings-section">
                     <h2>Change Username</h2>
                     <form action="/settings/change-username" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <div class="form-group">
                             <label for="newUsername">New Username</label>
                             <input type="text" id="newUsername" name="newUsername" required>
@@ -136,6 +137,7 @@
                 <div class="settings-section">
                     <h2>Change Profile Picture</h2>
                     <form action="/settings/change-profile-picture" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <div class="form-group">
                             <label for="profilePicture">Upload New Profile Picture</label>
                             <input type="file" id="profilePicture" name="profilePicture" accept="image/*">
@@ -149,6 +151,7 @@
                 <div class="settings-section">
                     <h2>Change Password</h2>
                     <form action="/settings/change-password" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <div class="form-group">
                             <label for="currentPassword">Current Password</label>
                             <input type="password" id="currentPassword" name="currentPassword" required>

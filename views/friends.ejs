@@ -29,11 +29,100 @@
             align-items: center;
             justify-content: flex-start;
             margin-top: 60px;
+            width: 100%;
+            max-width: 800px; 
+            margin-left: auto;
+            margin-right: auto;
         }
-        .message-container {
-            margin-top: 50px;
-            font-size: 1.5em;
-            color: #555;
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .friend-actions, .friends-section, .requests-section {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            text-align: left;
+        }
+        .friend-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .friend-actions input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box; 
+        }
+        .friend-actions button {
+            padding: 10px 15px;
+            background-color: #000000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .friend-actions button:hover {
+            background-color: #333333;
+        }
+        #friendRequestMessage {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .friends-section h2, .requests-section h2 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        #friendsList {
+            list-style: none;
+            padding: 0;
+        }
+        #friendsList li {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        #friendsList li:last-child {
+            border-bottom: none;
+        }
+        #friendsList img {
+            margin-right: 10px;
+            border: 1px solid #ddd;
+        }
+        .friend-request-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .friend-request-item:last-child {
+            border-bottom: none;
+        }
+        .friend-request-item .button-group button {
+            padding: 8px 12px;
+            margin-left: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            background-color: #000000;
+            color: white;
+        }
+        .friend-request-item .button-group button:hover {
+            background-color: #333333;
+        }
+        .friend-request-item .button-group {
+            display: flex;
+            gap: 5px; 
         }
     </style>
 </head>
@@ -42,10 +131,186 @@
     <div class="main-area">
         <%- include('parts/topbar', { currentPath: request.url }) %>
         <div class="content-area">
-            <div class="message-container">
-                <p>Imagine having no friends</p>
+            <h1>Friends</h1>
+            <div class="friend-actions">
+                <input type="hidden" id="csrfToken" value="<%= csrfToken %>">
+                <input type="text" id="friendUsername" placeholder="Enter username to send request">
+                <button id="sendFriendRequestBtn" class="primary-button">Send Friend Request</button>
+                <p id="friendRequestMessage"></p>
+            </div>
+            <div class="friends-section">
+                <h2>Your Friends</h2>
+                <ul id="friendsList">
+                    <li>Loading friends...</li>
+                </ul>
+            </div>
+            <div class="requests-section">
+                <h2>Friend Requests</h2>
+                <div id="friendRequestsList">
+                    <p>Loading requests...</p>
+                </div>
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadFriendsAndRequests();
+            document.getElementById('sendFriendRequestBtn').addEventListener('click', sendFriendRequest);
+            document.getElementById('friendRequestsList').addEventListener('click', async (event) => {
+                const target = event.target;
+                if (target.classList.contains('accept-request-btn')) {
+                    const requestId = target.dataset.requestId;
+                    await handleFriendRequestAction(`/api/friends/requests/accept/${requestId}`, 'Friend request accepted.', 'accept');
+                } else if (target.classList.contains('reject-request-btn')) {
+                    const requestId = target.dataset.requestId;
+                    await handleFriendRequestAction(`/api/friends/requests/reject/${requestId}`, 'Friend request rejected.', 'reject');
+                } else if (target.classList.contains('cancel-request-btn')) {
+                    const requestId = target.dataset.requestId;
+                    await handleFriendRequestAction(`/api/friends/requests/cancel/${requestId}`, 'Friend request canceled.', 'cancel');
+                }
+            });
+        });
+        async function loadFriendsAndRequests() {
+            try {
+                const [friendsResponse, requestsResponse] = await Promise.all([
+                    fetch('/api/friends/list'),
+                    fetch('/api/friends/requests')
+                ]);
+                const friendsData = await friendsResponse.json();
+                const requestsData = await requestsResponse.json();
+                displayFriends(friendsData.friends);
+                displayFriendRequests(requestsData.incomingRequests, requestsData.outgoingRequests);
+            } catch (error) {
+                console.error('Error loading friends and requests:', error);
+                document.getElementById('friendsList').innerHTML = '<li>Error loading friends.</li>';
+                document.getElementById('friendRequestsList').innerHTML = '<p>Error loading requests.</p>';
+            }
+        }
+        function displayFriends(friends) {
+            const friendsList = document.getElementById('friendsList');
+            friendsList.innerHTML = '';
+            if (friends.length === 0) {
+                friendsList.innerHTML = '<li>You have no friends yet.</li>';
+                return;
+            }
+            friends.forEach(friend => {
+                const listItem = document.createElement('li');
+                const img = document.createElement('img');
+                img.src = friend.profile_picture;
+                img.alt = `${friend.username}'s profile picture`;
+                img.width = 30;
+                img.height = 30;
+                img.style.borderRadius = '50%';
+                const span = document.createElement('span');
+                span.textContent = friend.username; 
+                listItem.appendChild(img);
+                listItem.appendChild(span);
+                friendsList.appendChild(listItem);
+            });
+        }
+        function displayFriendRequests(incomingRequests, outgoingRequests) {
+            const friendRequestsList = document.getElementById('friendRequestsList');
+            friendRequestsList.innerHTML = '';
+            const allRequests = [...incomingRequests.map(req => ({ ...req, type: 'incoming' })), ...outgoingRequests.map(req => ({ ...req, type: 'outgoing' }))];
+            if (allRequests.length === 0) {
+                friendRequestsList.innerHTML = '<p>No pending friend requests.</p>';
+                return;
+            }
+            allRequests.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            allRequests.forEach(request => {
+                const requestDiv = document.createElement('div');
+                requestDiv.classList.add('friend-request-item');
+                let buttons = '';
+                const requestTextSpan = document.createElement('span'); 
+                if (request.type === 'incoming') {
+                    requestTextSpan.innerHTML = `Incoming from <strong></strong>`;
+                    requestTextSpan.querySelector('strong').textContent = request.sender_username; 
+                    buttons = `
+                        <div class="button-group">
+                            <button class="accept-request-btn primary-button" data-request-id="${request.id}">Accept</button>
+                            <button class="reject-request-btn primary-button" data-request-id="${request.id}">Reject</button>
+                        </div>
+                    `;
+                } else { 
+                    requestTextSpan.innerHTML = `Outgoing to <strong></strong>`;
+                    requestTextSpan.querySelector('strong').textContent = request.receiver_username; 
+                    buttons = `
+                        <div class="button-group">
+                            <button class="cancel-request-btn primary-button" data-request-id="${request.id}">Cancel</button>
+                        </div>
+                    `;
+                }
+                const p = document.createElement('p');
+                p.appendChild(requestTextSpan);
+                const small = document.createElement('small');
+                small.textContent = ` (${new Date(request.created_at).toLocaleString()})`;
+                p.appendChild(small);
+                requestDiv.appendChild(p);
+                requestDiv.insertAdjacentHTML('beforeend', buttons); 
+                friendRequestsList.appendChild(requestDiv);
+            });
+        }
+        async function sendFriendRequest() {
+            const receiverUsername = document.getElementById('friendUsername').value;
+            const messageContainer = document.getElementById('friendRequestMessage');
+            messageContainer.textContent = ''; 
+            if (!receiverUsername) {
+                messageContainer.textContent = 'Please enter a username.';
+                messageContainer.style.color = 'red';
+                return;
+            }
+            try {
+                const response = await fetch('/api/friends/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.getElementById('csrfToken').value
+                    },
+                    body: JSON.stringify({ receiverUsername })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    messageContainer.textContent = data.message;
+                    messageContainer.style.color = 'green';
+                    document.getElementById('friendUsername').value = ''; 
+                    await loadFriendsAndRequests(); 
+                } else {
+                    messageContainer.textContent = data.error || 'Failed to send friend request.';
+                    messageContainer.style.color = 'red';
+                }
+            } catch (error) {
+                console.error('Error sending friend request:', error);
+                messageContainer.textContent = 'Network error or server unavailable.';
+                messageContainer.style.color = 'red';
+            }
+        }
+        async function handleFriendRequestAction(url, successMessage, actionType) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.getElementById('csrfToken').value
+                    }
+                });
+                const data = await response.json();
+                const messageContainer = document.getElementById('friendRequestMessage');
+                messageContainer.textContent = ''; 
+                if (response.ok) {
+                    messageContainer.textContent = successMessage;
+                    messageContainer.style.color = 'green';
+                    await loadFriendsAndRequests(); 
+                } else {
+                    messageContainer.textContent = data.error || `Failed to ${actionType} friend request.`;
+                    messageContainer.style.color = 'red';
+                }
+            } catch (error) {
+                console.error(`Error ${actionType} friend request:`, error);
+                const messageContainer = document.getElementById('friendRequestMessage');
+                messageContainer.textContent = 'Network error or server unavailable.';
+                messageContainer.style.color = 'red';
+            }
+        }
+    </script>
 </body>
 </html>
