@@ -148,27 +148,27 @@
                                 <td><%= user.id %></td>
                                 <td><%= user.username %></td>
                                 <td>
-                                    <!-- Make Admin (user.is_admin is assumed) -->
+                                    
                                     <a href="/admin/users/<%= user.id %>/toggle-admin" title="<%= user.is_admin ? 'Revoke Admin' : 'Make Admin' %>">
                                         <i class="fas <%= user.is_admin ? 'fa-user-shield' : 'fa-user-plus' %> action-icon"></i>
                                     </a>
 
-                                    <!-- Update Username (Placeholder for a modal/form action) -->
+                                    
                                     <a href="#" onclick="openUpdateUsernameModal('<%= user.id %>', '<%= user.username %>')" title="Update Username">
                                         <i class="fas fa-user-edit action-icon"></i>
                                     </a>
 
-                                    <!-- Change Password (Placeholder for a modal/form action) -->
+                                    
                                     <a href="#" onclick="openChangePasswordModal('<%= user.id %>', '<%= user.username %>')" title="Change Password">
                                         <i class="fas fa-key action-icon"></i>
                                     </a>
 
-                                    <!-- Set Verified (user.is_verified is assumed) -->
+                                    
                                     <a href="/admin/users/<%= user.id %>/toggle-verified" title="<%= user.is_verified ? 'Unverify User' : 'Set Verified' %>">
                                         <i class="fas <%= user.is_verified ? 'fa-check-circle verified-icon' : 'fa-times-circle unverified-icon' %> action-icon"></i>
                                     </a>
 
-                                    <!-- Delete Account (Placeholder for a form submission/confirmation) -->
+                                    
                                     <a href="/admin/users/<%= user.id %>/delete" onclick="return confirm('Are you sure you want to delete user <%= user.username %>?')" title="Delete Account">
                                         <i class="fas fa-trash-alt action-icon delete-icon"></i>
                                     </a>
@@ -184,7 +184,6 @@
     </div>
 </body>
 
-<!-- Update Username Modal -->
 <div id="updateUsernameModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('updateUsernameModal')">&times;</span>
@@ -200,7 +199,6 @@
     </div>
 </div>
 
-<!-- Change Password Modal -->
 <div id="changePasswordModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('changePasswordModal')">&times;</span>

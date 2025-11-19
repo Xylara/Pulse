@@ -1,4 +1,5 @@
 const express = require('express');
+const https = require('https');
 
 function createAdminRouter(pool, isAuthenticated, isAdmin, bcrypt, saltRounds) {
     const router = express.Router();
@@ -21,7 +22,69 @@ function createAdminRouter(pool, isAuthenticated, isAdmin, bcrypt, saltRounds) {
         }
     }
 
+    const fetchLatestCommits = () => {
+        return new Promise((resolve, reject) => {
+            const options = {
+                hostname: 'api.github.com',
+                path: '/repos/Xylara/Pulse/commits?per_page=5',
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'Pulse-Admin-Dashboard'
+                }
+            };
+
+            const req = https.request(options, (res) => {
+                let data = '';
+
+                res.on('data', (chunk) => {
+                    data += chunk;
+                });
+
+                res.on('end', () => {
+                    if (res.statusCode !== 200) {
+                        console.error(`GitHub API error: ${res.statusCode} ${res.statusMessage}`);
+                        return resolve([]);
+                    }
+                    try {
+                        const commits = JSON.parse(data);
+                        const formattedCommits = commits.map(commit => ({
+                            sha: commit.sha.substring(0, 7),
+                            message: commit.commit.message.split('\n')[0],
+                            author: commit.commit.author.name,
+                            date: new Date(commit.commit.author.date).toLocaleDateString(),
+                            url: commit.html_url
+                        }));
+                        resolve(formattedCommits);
+                    } catch (e) {
+                        console.error('Error parsing GitHub API response:', e);
+                        resolve([]);
+                    }
+                });
+            });
+
+            req.on('error', (e) => {
+                console.error('Error fetching latest commits:', e);
+                resolve([]);
+            });
+
+            req.end();
+        });
+    };
+
     router.use(isAuthenticated, isAdmin);
+
+    router.get('/', async (req, res) => {
+        try {
+            const result = await pool.query('SELECT COUNT(*) FROM users');
+            const userCount = result.rows[0].count;
+            const latestUpdates = await fetchLatestCommits();
+            res.render('admin/dashboard', { request: req, userCount: userCount, latestUpdates: latestUpdates });
+        } catch (error) {
+            console.error('Error fetching data for admin dashboard:', error);
+            res.status(500).send('Internal Server Error');
+        }
+    });
 
     router.get('/announcements', (req, res) => {
         res.render('admin/announcements', { request: req });

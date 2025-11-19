@@ -99,10 +99,10 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
             const isVerified = config['email-verification'] ? 'no' : 'yes';
             const verificationToken = isVerified === 'no' ? crypto.randomBytes(32).toString('hex') : null;
 
-            const randomAvatar = '/others/default_avatar.png';
+            const cdnDefaultAvatar = `${process.env.NIMBUS_URL}/cdn/profile/default_avatar.png`;
             const result = await pool.query(
                 'INSERT INTO users (email, username, password_hash, is_verified, verification_token, profile_picture) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-                [email, username, hashedPassword, isVerified, verificationToken, randomAvatar]
+                [email, username, hashedPassword, isVerified, verificationToken, cdnDefaultAvatar]
             );
 
             if (isVerified === 'no') {

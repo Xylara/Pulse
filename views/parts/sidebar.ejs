@@ -115,7 +115,14 @@
 
     <div class="sidebar-link-container">
         <a href="/settings" class="sidebar-link<%= isSettingsActive ? ' active' : '' %>">
-            <img src="<%= user.profile_picture %>" alt="Profile Picture" class="profile-picture-icon">
+            <%
+                const profilePictureSrc = (user.profile_picture &&
+                                            user.profile_picture !== 'https://pulsecdn.hyghj.eu.org/cdn/profile/1.png' &&
+                                            user.profile_picture !== 'https://pulsecdn.hyghj.eu.org/cdn/profile/2.png')
+                                            ? user.profile_picture
+                                            : '/others/default_avatar.png';
+            %>
+            <img src="<%= profilePictureSrc %>" alt="Profile Picture" class="profile-picture-icon">
         </a>
         <div class="sidebar-tooltip">Settings</div>
     </div>
