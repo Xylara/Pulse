@@ -99,9 +99,10 @@ function createAuthRouter(pool, bcrypt, saltRounds) {
             const isVerified = config['email-verification'] ? 'no' : 'yes';
             const verificationToken = isVerified === 'no' ? crypto.randomBytes(32).toString('hex') : null;
 
+            const randomAvatar = '/others/default_avatar.png';
             const result = await pool.query(
-                'INSERT INTO users (email, username, password_hash, is_verified, verification_token) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-                [email, username, hashedPassword, isVerified, verificationToken]
+                'INSERT INTO users (email, username, password_hash, is_verified, verification_token, profile_picture) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+                [email, username, hashedPassword, isVerified, verificationToken, randomAvatar]
             );
 
             if (isVerified === 'no') {

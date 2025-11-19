@@ -8,6 +8,9 @@ const createAdminRouter = require('./modules/admin');
 const { startCli } = require('./modules/cli');
 const session = require('express-session');
 const https = require('https');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const port = 3000;
@@ -34,6 +37,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/others', express.static('others'));
+app.use('/uploads', express.static('uploads')); 
 
 app.use(session({
     secret: process.env.SESSION_SECRET || 'pulse',
@@ -137,6 +141,132 @@ app.get('/admin', isAuthenticated, isAdmin, async (req, res) => {
 
 app.get('/dashboard', isAuthenticated, (req, res) => {
     res.render('dashboard', { request: req });
+});
+
+app.get('/friends', isAuthenticated, (req, res) => {
+    res.render('friends', { request: req });
+});
+
+app.get('/settings', isAuthenticated, (req, res) => {
+    res.render('settings', { request: req, successMessage: null, errorMessage: null });
+});
+
+app.post('/settings/change-username', isAuthenticated, async (req, res) => {
+    const { newUsername } = req.body;
+    const userId = req.session.user.id;
+
+    if (!newUsername) {
+        return res.render('settings', { request: req, errorMessage: 'New username cannot be empty.', successMessage: null });
+    }
+
+    try {
+
+        const existingUser = await pool.query('SELECT id FROM users WHERE username = $1', [newUsername]);
+        if (existingUser.rows.length > 0) {
+            return res.render('settings', { request: req, errorMessage: 'Username already taken.', successMessage: null });
+        }
+
+        await pool.query('UPDATE users SET username = $1 WHERE id = $2', [newUsername, userId]);
+        req.session.user.username = newUsername; 
+        res.render('settings', { request: req, successMessage: 'Username updated successfully!', errorMessage: null });
+    } catch (error) {
+        console.error('Error changing username:', error);
+        res.render('settings', { request: req, errorMessage: 'Failed to update username.', successMessage: null });
+    }
+});
+
+app.post('/settings/change-password', isAuthenticated, async (req, res) => {
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+    const userId = req.session.user.id;
+
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+        return res.render('settings', { request: req, errorMessage: 'All password fields are required.', successMessage: null });
+    }
+
+    if (newPassword !== confirmNewPassword) {
+        return res.render('settings', { request: req, errorMessage: 'New passwords do not match.', successMessage: null });
+    }
+
+    try {
+        const result = await pool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+        const user = result.rows[0];
+
+        if (!user || !(await bcrypt.compare(currentPassword, user.password_hash))) {
+            return res.render('settings', { request: req, errorMessage: 'Incorrect current password.', successMessage: null });
+        }
+
+        const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+        await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newPasswordHash, userId]);
+        res.render('settings', { request: req, successMessage: 'Password updated successfully!', errorMessage: null });
+    } catch (error) {
+        console.error('Error changing password:', error);
+        res.render('settings', { request: req, errorMessage: 'Failed to update password.', successMessage: null });
+    }
+});
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = 'uploads/';
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir);
+        }
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, req.session.userId + path.extname(file.originalname));
+    }
+});
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|gif/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        } else {
+            cb('Error: Images Only!');
+        }
+    }
+}).single('profilePicture');
+
+app.post('/settings/change-profile-picture', isAuthenticated, (req, res) => {
+    upload(req, res, async (err) => {
+        if (err) {
+            console.error('Error uploading file:', err);
+            return res.render('settings', { request: req, errorMessage: err, successMessage: null });
+        }
+        if (!req.file) {
+            return res.render('settings', { request: req, errorMessage: 'No file selected.', successMessage: null });
+        }
+
+        const userId = req.session.user.id;
+        const oldProfilePicture = req.session.user.profile_picture;
+        const newProfilePicture = `/uploads/${req.file.filename}`;
+
+        try {
+            await pool.query('UPDATE users SET profile_picture = $1 WHERE id = $2', [newProfilePicture, userId]);
+            req.session.user.profile_picture = newProfilePicture; 
+
+            if (oldProfilePicture && !oldProfilePicture.startsWith('/others/default_avatar.png')) {
+                const oldPath = path.join(__dirname, oldProfilePicture);
+                fs.unlink(oldPath, (unlinkErr) => {
+                    if (unlinkErr) {
+                        console.error('Error deleting old profile picture:', unlinkErr);
+                    } else {
+                        console.log('Old profile picture deleted:', oldPath);
+                    }
+                });
+            }
+
+            res.render('settings', { request: req, successMessage: 'Profile picture updated successfully!', errorMessage: null });
+        } catch (error) {
+            console.error('Error updating profile picture in DB:', error);
+            res.render('settings', { request: req, errorMessage: 'Failed to update profile picture.', successMessage: null });
+        }
+    });
 });
 
 app.listen(port, () => {

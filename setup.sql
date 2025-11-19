@@ -5,6 +5,7 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     username VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    profile_picture VARCHAR(255) DEFAULT '/others/default_avatar.png' NOT NULL,
     isadmin VARCHAR(3) DEFAULT 'no' NOT NULL,
     is_verified VARCHAR(3) DEFAULT 'no' NOT NULL,
     verification_token VARCHAR(255)

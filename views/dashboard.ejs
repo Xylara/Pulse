@@ -97,7 +97,7 @@
     <%- include('parts/sidebar', { currentPath: request.url }) %>
     <div id="loading-bar" class="loading-bar"></div>
     <div class="main-area">
-        <%- include('parts/topbar') %>
+        <%- include('parts/topbar', { currentPath: request.url }) %>
         <div class="content-area">
             <div id="announcement-display" class="announcement-container" style="display: none;">
                 <!-- Announcement will be loaded here -->

@@ -40,6 +40,12 @@
         width: 32px;
         height: 32px;
     }
+    .profile-picture-icon {
+        width: 42px; 
+        height: 42px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
 
     .sidebar-link-container {
         position: relative;
@@ -96,14 +102,22 @@
 
 <div class="sidebar">
     <%
-        const isActive = currentPath === '/dashboard' || currentPath.startsWith('/friends/');
-        const activeClass = isActive ? ' active' : '';
+        const isDashboardActive = currentPath === '/dashboard';
+        const isFriendsActive = currentPath.startsWith('/friends');
+        const isSettingsActive = currentPath === '/settings';
     %>
     <div class="sidebar-link-container">
-        <a href="/dashboard" class="sidebar-link<%= activeClass %>">
+        <a href="/dashboard" class="sidebar-link<%= isDashboardActive ? ' active' : '' %>">
             <img src="/others/pulse.png" alt="Pulse Logo">
         </a>
         <div class="sidebar-tooltip">Home</div>
+    </div>
+
+    <div class="sidebar-link-container">
+        <a href="/settings" class="sidebar-link<%= isSettingsActive ? ' active' : '' %>">
+            <img src="<%= user.profile_picture %>" alt="Profile Picture" class="profile-picture-icon">
+        </a>
+        <div class="sidebar-tooltip">Settings</div>
     </div>
 
     <% if (user && user.isadmin && user.isadmin.toLowerCase() === 'yes') { %>
